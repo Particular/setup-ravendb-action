@@ -13,7 +13,7 @@ $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
 $testConnectionCommand = ""
 
 if ($runnerOs -eq "Linux") {
-    $Env:LICENSE=$RavenDBLicense;$Env:RAVENDB_VERSION=$RavenDBVersion;docker-compose -f singlenode-compose.yml up
+    $Env:LICENSE=$RavenDBLicense;$Env:RAVENDB_VERSION=$RavenDBVersion;docker-compose -f singlenode-compose.yml up --detach
 }
 elseif ($runnerOs -eq "Windows") {
 
