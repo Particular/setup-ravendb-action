@@ -2,6 +2,8 @@ param (
     [string]$ContainerName,
     [string]$StorageName,
     [string]$ConnectionStringName,
+    [string]$RavenDBLicense,
+    [string]$RavenDBVersion,
     [string]$Tag
 )
 
@@ -11,7 +13,7 @@ $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
 $testConnectionCommand = ""
 
 if ($runnerOs -eq "Linux") {
-    docker-compose -f singlenode-compose.yml up
+    LICENSE=$RavenDBLicense RAVENDB_VERSION=$RavenDBVersion docker-compose -f singlenode-compose.yml up
 }
 elseif ($runnerOs -eq "Windows") {
 

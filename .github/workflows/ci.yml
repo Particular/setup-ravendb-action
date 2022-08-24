@@ -37,6 +37,7 @@ jobs:
         uses: ./
         with:
           connection-string-name: RavenDBConnectionString
+          ravendb-license: ${{ secrets.RAVEN_LICENSE }}
           tag: setup-ravendb-action
       - name: Validate
         shell: pwsh

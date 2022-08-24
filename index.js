@@ -14,6 +14,8 @@ let isPost = core.getState('IsPost');
 core.saveState('IsPost', true);
 
 let connectionStringName = core.getInput('connection-string-name');
+let ravenLicense = core.GetInput('ravendb-license');
+let ravenVersion = core.GetInput('ravendb-version');
 let tag = core.getInput('tag');
 
 async function run() {
@@ -37,6 +39,8 @@ async function run() {
                     '-File', setupPs1,
                     '-ContainerName', containerName,
                     '-ConnectionStringName', connectionStringName,
+                    '-RavenDBLicense', ravenLicense,
+                    '-RavenDBVersion', ravenVersion,
                     '-Tag', tag
                 ]);
 

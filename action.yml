@@ -4,6 +4,13 @@ inputs:
   connection-string-name:
     description: The name of the environment variable to fill with the RavenDB connection string.
     required: true
+  ravendb-license:
+    description: The RavenDB license as a single line JSON string
+    required: true
+  ravendb-version:
+    description: The RavenDB container version
+    required: false
+    default: "5.3"
   tag:
     description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
     required: true
