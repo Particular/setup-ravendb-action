@@ -1,0 +1,40 @@
+version: '3'
+services:
+  singlenode:
+    container_name: singlenode
+    image: ravendb/ravendb:5.3-ubuntu-latest
+    ports:
+      - 8080:8080
+      - 38888:38888
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
+      - RAVEN_Setup_Mode=None
+      - RAVEN_License_Eula_Accepted=true
+      - "RAVEN_ServerUrl=http://172.28.1.1:8080"
+      - "RAVEN_PublicServerUrl=http://host.docker.internal:8080"
+      - "RAVEN_ServerUrl_Tcp=tcp://172.28.1.1:38888"
+      - "RAVEN_PublicServerUrl_Tcp=tcp://host.docker.internal:38888"
+    networks:
+      singlenode_network:
+        ipv4_address: 172.28.1.1
+  singlenodesetup:
+    container_name: singlenodesetup
+    image: mcr.microsoft.com/powershell:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./setup_singlenode.ps1:/var/ravendb/setup_singlenode.ps1
+    entrypoint: ["pwsh", "-command", "&./var/ravendb/setup_singlenode.ps1", "'${LICENSE}'", "host.docker.internal"]
+    restart: "no"
+    depends_on:
+      - singlenode
+    networks:
+      - singlenode_network
+networks:
+  singlenode_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16

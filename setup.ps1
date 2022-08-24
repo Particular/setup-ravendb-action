@@ -11,7 +11,7 @@ $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
 $testConnectionCommand = ""
 
 if ($runnerOs -eq "Linux") {
-
+    docker-compose -f singlenode-compose.yml up
 }
 elseif ($runnerOs -eq "Windows") {
 
