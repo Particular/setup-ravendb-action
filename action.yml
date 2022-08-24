@@ -1,0 +1,13 @@
+name: setup-ravendb-action
+description: Set up and teardown an RavenDB database
+inputs:
+  connection-string-name:
+    description: The name of the environment variable to fill with the RavenDB connection string.
+    required: true
+  tag:
+    description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
+    required: true
+runs:
+  using: node12
+  main: dist/index.js
+  post: dist/index.js

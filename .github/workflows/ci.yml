@@ -1,0 +1,47 @@
+name: CI
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+jobs:
+  ci:
+    name: ${{ matrix.os-name }}-${{ matrix.cluster-type.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019, ubuntu-20.04]
+        cluster-type:
+          - label: 'singlenode'
+          - label: 'cluster'
+        include:
+          # Add os-name alias for job name
+          - os: windows-2019
+            os-name: Windows
+          - os: ubuntu-20.04
+            os-name: Linux
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Azure login
+        if: matrix.os-name == 'Windows'
+        uses: azure/login@v1.3.0
+        with:
+          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
+      - name: Run
+        uses: ./
+        with:
+          connection-string-name: RavenDBConnectionString
+          tag: setup-ravendb-action
+      - name: Validate
+        shell: pwsh
+        run: |
+          echo "RavenDBConnectionString = $($Env:RavenDBConnectionString)"
+          if ( $Env:RavenDBConnectionString -le 0 ) {
+            throw "Environment variable 'RavenDBConnectionString' not set."
+          }
