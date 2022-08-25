@@ -137,7 +137,7 @@ Write-Output "::endgroup::"
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
+    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
 }
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
