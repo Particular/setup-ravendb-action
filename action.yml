@@ -1,9 +1,14 @@
 name: setup-ravendb-action
 description: Set up and teardown an RavenDB database
 inputs:
-  connection-string-name:
+  single-connection-string-name:
     description: The name of the environment variable to fill with the RavenDB connection string.
-    required: true
+    required: false
+    default: "RavenDBSingleNodeUrl"
+  cluster-connection-string-name:
+    description: The name of the environment variable to fill with the comma seperated RavenDB cluster connection strings.
+    required: false
+    default: "CommaSeparatedRavenClusterUrls"
   ravendb-license:
     description: The RavenDB license as a single line JSON string
     required: true

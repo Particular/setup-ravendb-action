@@ -1,7 +1,8 @@
 param (
     [string]$ContainerName,
     [string]$StorageName,
-    [string]$ConnectionStringName,
+    [string]$SingleConnectionStringName,
+    [string]$ClusterConnectionStringName,
     [string]$RavenDBLicense,
     [string]$RavenDBVersion,
     [string]$RavenDBMode,
@@ -27,6 +28,10 @@ if ($runnerOs -eq "Linux") {
         docker-compose -f singlenode-compose.yml up --detach
         docker-compose -f clusternodes-compose.yml up --detach
     }
+
+    # write the connection string to the specified environment variable
+    "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
+    "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
 }
 elseif ($runnerOs -eq "Windows") {
 

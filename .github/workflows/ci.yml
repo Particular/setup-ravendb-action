@@ -37,14 +37,17 @@ jobs:
       - name: Run
         uses: ./
         with:
-          connection-string-name: RavenDBConnectionString
           ravendb-license: ${{ secrets.RAVEN_LICENSE }}
           ravendb-mode: ${{ matrix.cluster-type.label }}
           tag: setup-ravendb-action
       - name: Validate
         shell: pwsh
         run: |
-          echo "RavenDBConnectionString = $($Env:RavenDBConnectionString)"
-          if ( $Env:RavenDBConnectionString -le 0 ) {
-            throw "Environment variable 'RavenDBConnectionString' not set."
+          echo "RavenDBSingleNodeUrl = $($Env:RavenDBSingleNodeUrl)"
+          if ( ($Env:RavenDBSingleNodeUrl -le 0) -and ((${{ matrix.cluster-type.label }} -eq "Single") -or (${{ matrix.cluster-type.label }} -eq "Both") ) ) {
+            throw "Environment variable 'RavenDBSingleNodeUrl' not set."
+          }
+          echo "CommaSeparatedRavenClusterUrls = $($Env:CommaSeparatedRavenClusterUrls)"
+          if ( $Env:CommaSeparatedRavenClusterUrls -le 0 -and ((${{ matrix.cluster-type.label }} -eq "Cluster") -or (${{ matrix.cluster-type.label }} -eq "Both")) {
+            throw "Environment variable 'CommaSeparatedRavenClusterUrls' not set."
           }

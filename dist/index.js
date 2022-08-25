@@ -3446,7 +3446,8 @@ console.log('Cleanup path: ' + cleanupPs1);
 let isPost = core.getState('IsPost');
 core.saveState('IsPost', true);
 
-let connectionStringName = core.getInput('connection-string-name');
+let singleConnectionStringName = core.getInput('single-connection-string-name');
+let clusterConnectionStringName = core.getInput('cluster-connection-string-name');
 let ravenLicense = core.getInput('ravendb-license');
 let ravenVersion = core.getInput('ravendb-version');
 let ravenMode = core.getInput('ravendb-mode');
@@ -3473,7 +3474,8 @@ async function run() {
                 [
                     '-File', setupPs1,
                     '-ContainerName', containerName,
-                    '-ConnectionStringName', connectionStringName,
+                    '-SingleConnectionStringName', singleConnectionStringName,
+                    '-ClusterConnectionStringName', clusterConnectionStringName,
                     '-RavenDBLicense', ravenLicense,
                     '-RavenDBVersion', ravenVersion,
                     '-RavenDBMode', ravenMode,
