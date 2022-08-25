@@ -11,7 +11,11 @@ steps:
 - name: Setup RavenDB
   uses: Particular/setup-ravendb-action@v1.0.0
   with:
-    connection-string-name: <my connection string name>
+    single-connection-string-name: <my connection string name for the single node>
+    cluster-connection-string-name: <my connection string name for the cluster nodes>
+    ravendb-license: <Single Line JSON License String>
+    ravendb-version: <RavenDB Version>
+    ravendb-mode: <RavenDB Server Mode>
     tag: <my tag>
 ```
 
@@ -40,13 +44,17 @@ When changing `index.js`, either run `npm run dev` beforehand, which will watch 
 
 ## Testing
 
+1. [Acquire a developer license](https://ravendb.net/license/request/dev)
+
 ### With Node.js
 
 To test the setup action an `.env.setup` file in the root directory with the following content
 
 ```ini
 # Input overrides
-INPUT_CONNECTION-STRING-NAME=RavenDBConnectionString
+INPUT_SINGLE_CONNECTION-STRING-NAME=RavenDBConnectionString
+INPUT_CLUSTER_CONNECTION-STRING-NAME=RavenDBClusterConnectionString
+INPUT_RAVENDB_LICENSE=...
 INPUT_TAG=setup-ravendb-action
 
 # Runner overrides
@@ -68,6 +76,7 @@ To test the cleanup action add a `.env.cleanup` file in the root directory with 
 # State overrides
 STATE_IsPost=true
 STATE_containerName=nameOfPreviouslyCreatedContainer
+STATE ravenMode=nameOfPreviouslyUsedMode
 ```
 
 ```bash
@@ -89,5 +98,5 @@ To test the cleanup action set the required environment variables and execute `c
 
 ```bash
 $Env:RUNNER_OS=Windows
-.\cleanup.ps1 -ContainerName psw-ravendb-1 -ConnectionStringName RavenDBConnectionString -Tag setup-ravendb-action
+.\cleanup.ps1 -ContainerName psw-ravendb-1 -SingleConnectionStringName RavenDBConnectionString -ClusterConnectionStringName RavenDBConnectionString -RavenDBLicense "SingleLineJson" -RavenDBVersion "5.3" -RavenDBMode "Single" -Tag setup-ravendb-action
 ```
