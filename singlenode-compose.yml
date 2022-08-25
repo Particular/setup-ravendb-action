@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   singlenode:
     container_name: singlenode
@@ -26,7 +26,14 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./setup_singlenode.ps1:/var/ravendb/setup_singlenode.ps1
-    entrypoint: ["pwsh", "-command", "&./var/ravendb/setup_singlenode.ps1", "'${LICENSE}'", "host.docker.internal"]
+    entrypoint:
+      [
+        "pwsh",
+        "-command",
+        "&./var/ravendb/setup_singlenode.ps1",
+        "'${LICENSE}'",
+        "host.docker.internal",
+      ]
     restart: "no"
     depends_on:
       - singlenode

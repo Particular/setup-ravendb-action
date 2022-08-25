@@ -17,8 +17,9 @@ jobs:
       matrix:
         os: [windows-2019, ubuntu-20.04]
         cluster-type:
-          - label: 'singlenode'
-          - label: 'cluster'
+          - label: 'Single'
+          - label: 'Cluster'
+          - label: 'Both'
         include:
           # Add os-name alias for job name
           - os: windows-2019
@@ -38,6 +39,7 @@ jobs:
         with:
           connection-string-name: RavenDBConnectionString
           ravendb-license: ${{ secrets.RAVEN_LICENSE }}
+          ravendb-mode: ${{ matrix.cluster-type.label }}
           tag: setup-ravendb-action
       - name: Validate
         shell: pwsh

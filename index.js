@@ -16,6 +16,7 @@ core.saveState('IsPost', true);
 let connectionStringName = core.getInput('connection-string-name');
 let ravenLicense = core.getInput('ravendb-license');
 let ravenVersion = core.getInput('ravendb-version');
+let ravenMode = core.getInput('ravendb-mode');
 let tag = core.getInput('tag');
 
 async function run() {
@@ -30,6 +31,7 @@ async function run() {
             let containerName = 'psw-ravendb' + random;
 
             core.saveState('containerName', containerName);
+            core.saveState('ravenMode', ravenMode);
 
             console.log("containerName = " + containerName);
 
@@ -41,6 +43,7 @@ async function run() {
                     '-ConnectionStringName', connectionStringName,
                     '-RavenDBLicense', ravenLicense,
                     '-RavenDBVersion', ravenVersion,
+                    '-RavenDBMode', ravenMode,
                     '-Tag', tag
                 ]);
 
@@ -49,12 +52,14 @@ async function run() {
             console.log("Running cleanup");
 
             let containerName = core.getState('containerName');
+            let ravenMode = core.getState('ravenMode');
 
             await exec.exec(
                 'pwsh',
                 [
                     '-File', cleanupPs1,
                     '-ContainerName', containerName,
+                    '-RavenDBMode', ravenMode,
                 ]);
 
         }

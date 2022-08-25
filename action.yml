@@ -11,6 +11,10 @@ inputs:
     description: The RavenDB container version
     required: false
     default: "5.3"
+  ravendb-mode:
+    description: The RavenDB server mode (Single, Cluster, Both)
+    required: false
+    default: "Single"
   tag:
     description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
     required: true
