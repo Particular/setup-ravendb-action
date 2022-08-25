@@ -1,6 +1,5 @@
 param (
     [string]$ContainerName,
-    [string]$StorageName,
     [string]$SingleConnectionStringName,
     [string]$ClusterConnectionStringName,
     [string]$RavenDBLicense,
@@ -17,14 +16,15 @@ $ravenIpsAndPortsToVerify = @{}
 if ($runnerOs -eq "Linux") {
     Write-Output "Running Oracle in container $($ContainerName) using Docker"
 
-    $Env:RAVENDB_VERSION=$RavenDBVersion
-    $Env:CONTAINER_NAME=$ContainerName
+    $Env:LICENSE = $RavenDBLicense
+    $Env:RAVENDB_VERSION = $RavenDBVersion
+    $Env:CONTAINER_NAME = $ContainerName
 
-    if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f singlenode-compose.yml up --detach
         $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
     }
-    if(($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f clusternodes-compose.yml up --detach
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
         $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
@@ -46,47 +46,51 @@ elseif ($runnerOs -eq "Windows") {
         $region = $hostInfo.compute.location
     }
 
-    if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
     }
-    if(($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = ""; Port = 8080 })
         $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = ""; Port = 8080 })
         $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = ""; Port = 8080 })
     }
 
     function NewRavenDBNode {
-              param (
-                  $resourceGroup,
-                  $region,
-                  $prefix,
-                  $instanceId,
-                  $runnerOs,
-                  $commit,
-                  $tag
-              )
-              $hostname = "$prefix-$instanceId"
-              # echo will mess up the return value
-              Write-Debug "Creating RavenDB container $hostname in $region (This can take a while.)"
-              $containerImage = "ravendb/ravendb:$($RavenDBVersion)-ubuntu-latest"
-              $details = az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS="--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888" | ConvertFrom-Json
-              
-              # echo will mess up the return value
-              Write-Debug "Tagging container image"
-              $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
-              $ignore = az tag create --resource-id $details.id --tags Package=$tag RunnerOS=$runnerOs Commit=$commit $dateTag
-              return $details.ipAddress.fqdn
-          }
+        param (
+            $resourceGroup,
+            $region,
+            $prefix,
+            $instanceId,
+            $runnerOs,
+            $commit,
+            $tag
+        )
+        $hostname = "$prefix-$instanceId"
+        # echo will mess up the return value
+        Write-Debug "Creating RavenDB container $hostname in $region (This can take a while.)"
+        $containerImage = "ravendb/ravendb:$($RavenDBVersion)-ubuntu-latest"
+        $details = az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS="--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888" | ConvertFrom-Json
+
+        # echo will mess up the return value
+        Write-Debug "Tagging container image"
+        $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
+        $ignore = az tag create --resource-id $details.id --tags Package=$tag RunnerOS=$runnerOs Commit=$commit $dateTag
+        return $details.ipAddress.fqdn
+    }
 
     $NewRavenDBNodeDef = $function:NewRavenDBNode.ToString()
     @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
         $function:NewRavenDBNode = $using:NewRavenDBNodeDef
         $region = $using:region
         $prefix = $using:containerName
-        $detail = NewRavenDBNode $region $prefix $_ $runnerOs $Env:GITHUB_SHA
+        $detail = NewRavenDBNode $region $prefix $_.ToLower() $runnerOs $Env:GITHUB_SHA
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
     }
+
+    # write the connection string to the specified environment variable
+    "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
+    "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
 }
 else {
     Write-Output "$runnerOs not supported"
@@ -102,22 +106,19 @@ Write-Output "::group::Testing connection"
     $nodeName = $_
     $nodeInfo = $hashTable[$nodeName]
     Write-Output "Verifying connection $nodeName"
-    do
-    {
-        try
-        {
+    do {
+        try {
             Write-Output "Trying to connect to $nodeName on port $($nodeInfo.Port)"
             $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
             Write-Output "Connection to $nodeName successful"
-        } catch 
-        {
-            if($startDate.AddMinutes(2) -lt (Get-Date)) 
-            {
-              throw "Unable to connect to $nodeName"
+        }
+        catch {
+            if ($startDate.AddMinutes(2) -lt (Get-Date)) {
+                throw "Unable to connect to $nodeName"
             }
             Start-Sleep -Seconds 2
         }
-    } While($tcpClient.Connected -ne "True")
+    } While ($tcpClient.Connected -ne "True")
     $tcpClient.Close()
     Write-Output "Connection to $nodeName verified"
 }
@@ -126,12 +127,12 @@ Write-Output "::endgroup::"
 
 Write-Output "::group::Activation of nodes"
 
-if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
+    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
 }
-if(($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"

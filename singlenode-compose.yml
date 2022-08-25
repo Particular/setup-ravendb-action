@@ -19,6 +19,26 @@ services:
     networks:
       singlenode_network:
         ipv4_address: 172.28.1.1
+  singlenodesetup:
+    container_name: singlenodesetup
+    image: mcr.microsoft.com/powershell:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./setup_singlenode.ps1:/var/ravendb/setup_singlenode.ps1
+    entrypoint:
+      [
+        "pwsh",
+        "-command",
+        "&./var/ravendb/setup_singlenode.ps1",
+        "'${LICENSE}'",
+        "host.docker.internal",
+      ]
+    restart: "no"
+    depends_on:
+      - singlenode
+    networks:
+      - singlenode_network
 networks:
   singlenode_network:
     ipam:
