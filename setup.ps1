@@ -18,14 +18,10 @@ if ($runnerOs -eq "Linux") {
     $Env:LICENSE=$RavenDBLicense
     $Env:RAVENDB_VERSION=$RavenDBVersion
 
-    if($RavenDBMode -eq "Single") {
+    if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f singlenode-compose.yml up --detach
     }
-    if($RavenDBMode -eq "Cluster") {
-        docker-compose -f clusternodes-compose.yml up --detach
-    }
-    if($RavenDBMode -eq "Both") {
-        docker-compose -f singlenode-compose.yml up --detach
+    if(($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f clusternodes-compose.yml up --detach
     }
 
