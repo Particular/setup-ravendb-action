@@ -3,6 +3,8 @@ param (
     [string]$RavenDBMode
 )
 $runnerOs = $Env:RUNNER_OS ?? "Linux"
+$resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
+
 if ($runnerOs -eq "Linux") {
     Write-Output "Killing Docker container $ContainerName"
     if($RavenDBMode -eq "Single") {
@@ -16,11 +18,8 @@ if ($runnerOs -eq "Linux") {
     docker rm $ContainerName
 }
 elseif ($runnerOs -eq "Windows") {
-    Write-Output "Deleting Azure container $ContainerName"
-    az container delete --resource-group GitHubActions-RG --name $ContainerName --yes | Out-Null
-
-    Write-Output "Deleting Azure storage account $StorageName"
-    az storage account delete --resource-group GitHubActions-RG --name $StorageName --yes | Out-Null
+    Write-Output "Deleting Azure container(s) $ContainerName-*"
+    Get-AzContainerGroup -ResourceGroupName $resourceGroup | Where-Object { $_.Name -like "$($ContainerName)*" } | Remove-AzContainerGroup
 }
 else {
     Write-Output "$runnerOs not supported"
