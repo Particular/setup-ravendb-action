@@ -94,8 +94,8 @@ elseif ($runnerOs -eq "Windows") {
     }
 
     # write the connection string to the specified environment variable
-    "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
-    "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
+    "$($SingleConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)" >> $Env:GITHUB_ENV
+    "$($ClusterConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)" >> $Env:GITHUB_ENV
 }
 else {
     Write-Output "$runnerOs not supported"
