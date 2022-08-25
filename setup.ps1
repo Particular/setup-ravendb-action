@@ -56,8 +56,8 @@ Write-Output "::group::Testing connection"
     {
         try
         {
-            eecho "Trying to connect to $nodeName"
-            $tcpClient.Connect($nodeInfo['Ip'], $nodeInfo['Port'])
+            eecho "Trying to connect to $nodeName on port $nodeInfo.Port"
+            $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
             Write-Output "Connection to $nodeName successful"
         } catch 
         {
