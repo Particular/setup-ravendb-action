@@ -102,6 +102,9 @@ else {
     exit 1
 }
 
+Write-Output "::add-mask::$SingleConnectionStringName"
+Write-Output "::add-mask::$ClusterConnectionStringName"
+
 Write-Output "::group::Testing connection"
 
 @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
