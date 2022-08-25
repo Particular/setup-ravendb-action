@@ -28,7 +28,7 @@ if ($runnerOs -eq "Linux") {
         docker-compose -f clusternodes-compose.yml up --detach
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
         $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
-        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8032 })
+        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
     }
 
     # write the connection string to the specified environment variable
@@ -56,7 +56,7 @@ Write-Output "::group::Testing connection"
     {
         try
         {
-            Write-Output "Trying to connect to $nodeName on port $nodeInfo.Port"
+            Write-Output "Trying to connect to $nodeName on port $($nodeInfo.Port)"
             $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
             Write-Output "Connection to $nodeName successful"
         } catch 
