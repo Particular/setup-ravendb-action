@@ -1,7 +1,11 @@
 param (
+    [string]$ScriptDirectory,
     [string]$ContainerName,
     [string]$RavenDBMode
 )
+
+Set-Location $ScriptDirectory
+
 $runnerOs = $Env:RUNNER_OS ?? "Linux"
 $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
 

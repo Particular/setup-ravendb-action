@@ -3437,7 +3437,9 @@ const exec = __nccwpck_require__(932);
 
 const setupPs1 = path.resolve(__dirname, '../setup.ps1');
 const cleanupPs1 = path.resolve(__dirname, '../cleanup.ps1');
+const scriptDirectory = path.resolve(__dirname, '..');
 
+console.log('Script scriptDirectory: ' + setupPs1);
 console.log('Setup path: ' + setupPs1);
 console.log('Cleanup path: ' + cleanupPs1);
 
@@ -3473,6 +3475,7 @@ async function run() {
                 'pwsh',
                 [
                     '-File', setupPs1,
+                    '-ScriptDirectory', scriptDirectory,
                     '-ContainerName', containerName,
                     '-SingleConnectionStringName', singleConnectionStringName,
                     '-ClusterConnectionStringName', clusterConnectionStringName,
@@ -3493,6 +3496,7 @@ async function run() {
                 'pwsh',
                 [
                     '-File', cleanupPs1,
+                    '-ScriptDirectory', scriptDirectory,
                     '-ContainerName', containerName,
                     '-RavenDBMode', ravenMode,
                 ]);

@@ -1,4 +1,5 @@
 param (
+    [string]$ScriptDirectory,
     [string]$ContainerName,
     [string]$SingleConnectionStringName,
     [string]$ClusterConnectionStringName,
@@ -7,6 +8,8 @@ param (
     [string]$RavenDBMode,
     [string]$Tag
 )
+
+Set-Location $ScriptDirectory
 
 $runnerOs = $Env:RUNNER_OS ?? "Linux"
 $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
