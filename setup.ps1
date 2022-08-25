@@ -105,9 +105,6 @@ else {
     exit 1
 }
 
-Write-Output "::add-mask::$SingleConnectionStringName"
-Write-Output "::add-mask::$ClusterConnectionStringName"
-
 Write-Output "::group::Testing connection"
 
 @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
@@ -116,6 +113,7 @@ Write-Output "::group::Testing connection"
     $tcpClient = New-Object Net.Sockets.TcpClient
     $nodeName = $_
     $nodeInfo = $hashTable[$nodeName]
+    Write-Output "::add-mask::$($nodeInfo.Ip)"
     Write-Output "Verifying connection $nodeName"
     do {
         try {
