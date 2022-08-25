@@ -81,9 +81,12 @@ elseif ($runnerOs -eq "Windows") {
     $NewRavenDBNodeDef = $function:NewRavenDBNode.ToString()
     @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
         $function:NewRavenDBNode = $using:NewRavenDBNodeDef
+        $resourceGroup = $using:resourceGroup
         $region = $using:region
         $prefix = $using:containerName
-        $detail = NewRavenDBNode $region $prefix $_.ToLower() $runnerOs $Env:GITHUB_SHA
+        $instanceId = $_.ToLower()
+        $runnerOs = $using:runnerOs
+        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $Env:GITHUB_SHA
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
     }
@@ -125,14 +128,16 @@ Write-Output "::group::Testing connection"
 
 Write-Output "::endgroup::"
 
-Write-Output "::group::Activation of nodes"
+# This is not entirely nice because the activitation for linux happens inside the compose infrastructure while for windows
+# we have to do it here. The cluster checks during the setup phase whether it can reach the nodes and that was easier to do within
+# the compose setup container. Maybe one day we will find a way to clean this up a bit.
 
-if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on Single Node"
 
     Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
 }
-if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
@@ -146,5 +151,3 @@ if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
     Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
 }
-
-Write-Output "::endgroup::"
