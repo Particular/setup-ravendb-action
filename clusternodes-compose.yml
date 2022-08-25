@@ -61,28 +61,6 @@ services:
     networks:
       cluster_network:
         ipv4_address: 172.29.1.3
-  clustersetup:
-    container_name: clustersetup
-    image: mcr.microsoft.com/powershell:latest
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./setup_cluster.ps1:/var/ravendb/setup_cluster.ps1
-    entrypoint:
-      [
-        "pwsh",
-        "-command",
-        "&./var/ravendb/setup_cluster.ps1",
-        "'${LICENSE}'",
-        "host.docker.internal",
-      ]
-    restart: "no"
-    depends_on:
-      - leader
-      - follower1
-      - follower2
-    networks:
-      - cluster_network
 networks:
   cluster_network:
     ipam:

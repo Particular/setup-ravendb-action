@@ -17,7 +17,6 @@ $ravenIpsAndPortsToVerify = @{}
 if ($runnerOs -eq "Linux") {
     Write-Output "Running Oracle in container $($ContainerName) using Docker"
 
-    $Env:LICENSE=$RavenDBLicense
     $Env:RAVENDB_VERSION=$RavenDBVersion
     $Env:CONTAINER_NAME=$ContainerName
 
@@ -130,14 +129,14 @@ Write-Output "::group::Activation of nodes"
 if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
+    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
 }
 if(($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
+    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
 
     Write-Output "Establish the cluster relationship"
     Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
