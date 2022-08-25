@@ -17,6 +17,7 @@ $testConnectionCommand = ""
 if ($runnerOs -eq "Linux") {
     $Env:LICENSE=$RavenDBLicense
     $Env:RAVENDB_VERSION=$RavenDBVersion
+    $Env:CONTAINER_NAME=$ContainerName
 
     if(($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f singlenode-compose.yml up --detach
