@@ -23,7 +23,8 @@ if ($runnerOs -eq "Linux") {
 }
 elseif ($runnerOs -eq "Windows") {
     Write-Output "Deleting Azure container(s) $ContainerName-*"
-    az container list --resource-group $resourceGroup | Where-Object { $_.Name -like "$($ContainerName)*" } | az container delete --name $.Name --resource-group $resourceGroup --yes
+    $containersToDelete = az container list --resource-group $resourceGroup --query "[?contains(name, '$($ContainerName)')].id" --output tsv
+    az container delete --ids $containersToDelete --yes --output none
 }
 else {
     Write-Output "$runnerOs not supported"
