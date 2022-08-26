@@ -18,8 +18,8 @@ $ravenIpsAndPortsToVerify = @{}
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
+    # This makes sure host.docker.internal is resolvable. Windows Docker adds this automatically on Linux we have to do it manually
     bash -c "echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts"
-    bash -c "sudo /etc/init.d/dns-clean restart"
 
     $Env:LICENSE = $RavenDBLicense
     $Env:RAVENDB_VERSION = $RavenDBVersion
