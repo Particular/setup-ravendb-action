@@ -18,7 +18,7 @@ $ravenIpsAndPortsToVerify = @{}
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
-    Add-Content -Path /etc/hosts -Value "`n127.0.0.1`thost.docker.internal" -Force
+    bash -c 'sudo echo "127.0.0.1 thost.docker.internal" | sudo tee -a /etc/hosts'
 
     $Env:LICENSE = $RavenDBLicense
     $Env:RAVENDB_VERSION = $RavenDBVersion
