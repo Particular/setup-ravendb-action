@@ -55,6 +55,7 @@ To test the setup action an `.env.setup` file in the root directory with the fol
 INPUT_SINGLE_CONNECTION-STRING-NAME=RavenDBConnectionString
 INPUT_CLUSTER_CONNECTION-STRING-NAME=RavenDBClusterConnectionString
 INPUT_RAVENDB_LICENSE=...
+INPUT_WHATEVER_ELSE_YOU_NEED_TO_OVERRIDE=...
 INPUT_TAG=setup-ravendb-action
 
 # Runner overrides
@@ -91,12 +92,12 @@ To test the setup action set the required environment variables and execute `set
 $Env:RUNNER_OS=Windows
 $Env:RESOURCE_GROUP_OVERRIDE=yourResourceGroup
 $Env:REGION_OVERRIDE=yourResourceGroup
-.\setup.ps1 -ContainerName psw-ravendb-1 -ConnectionStringName RavenDBConnectionString -Tag setup-ravendb-action
+.\setup.ps1 -ScriptDirectory . -ContainerName psw-ravendb-1 -SingleConnectionStringName RavenDBConnectionString -ClusterConnectionStringName RavenDBConnectionString -RavenDBLicense 'SingleLineJSON' -RavenDBVersion "5.3" -RavenDBMode "Single" -Tag setup-ravendb-action
 ```
 
 To test the cleanup action set the required environment variables and execute `cleanup.ps1` with the desired parameters.
 
 ```bash
 $Env:RUNNER_OS=Windows
-.\cleanup.ps1 -ContainerName psw-ravendb-1 -SingleConnectionStringName RavenDBConnectionString -ClusterConnectionStringName RavenDBConnectionString -RavenDBLicense "SingleLineJson" -RavenDBVersion "5.3" -RavenDBMode "Single" -Tag setup-ravendb-action
+.\cleanup.ps1 -ScriptDirectory . -ContainerName psw-ravendb-1 -RavenDBMode "Single"
 ```
