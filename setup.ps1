@@ -27,13 +27,13 @@ if ($runnerOs -eq "Linux") {
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f singlenode-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "host.docker.internal"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker-compose -f clusternodes-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "host.docker.internal"; Port = 8081 })
-        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "host.docker.internal"; Port = 8082 })
-        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "host.docker.internal"; Port = 8083 })
+        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
+        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
+        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
     }
 
     # write the connection string to the specified environment variable
@@ -52,7 +52,7 @@ elseif ($runnerOs -eq "Windows") {
     }
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = ""; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = ""; Port = 8080 })
@@ -140,12 +140,12 @@ Write-Output "::endgroup::"
 # we have to do it here. The cluster checks during the setup phase whether it can reach the nodes and that was easier to do within
 # the compose setup container. Maybe one day we will find a way to clean this up a bit.
 
-if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on Single Node"
 
     Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
 }
-if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
