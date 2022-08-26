@@ -19,7 +19,7 @@ if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
     bash -c "echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts"
-    bash -c "sudo service network-manager restart"
+    bash -c "sudo /etc/init.d/dns-clean restart"
 
     $Env:LICENSE = $RavenDBLicense
     $Env:RAVENDB_VERSION = $RavenDBVersion
