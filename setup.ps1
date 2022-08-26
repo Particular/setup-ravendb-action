@@ -13,11 +13,12 @@ Set-Location $ScriptDirectory
 
 $runnerOs = $Env:RUNNER_OS ?? "Linux"
 $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
-$testConnectionCommand = ""
 $ravenIpsAndPortsToVerify = @{}
 
 if ($runnerOs -eq "Linux") {
-    Write-Output "Running Oracle in container $($ContainerName) using Docker"
+    Write-Output "Running RavenDB in container $($ContainerName) using Docker"
+
+    Add-Content -Path /etc/hosts -Value "`n127.0.0.1`thost.docker.internal" -Force
 
     $Env:LICENSE = $RavenDBLicense
     $Env:RAVENDB_VERSION = $RavenDBVersion
