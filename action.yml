@@ -1,0 +1,29 @@
+name: setup-ravendb-action
+description: Set up and teardown an RavenDB database
+inputs:
+  single-connection-string-name:
+    description: The name of the environment variable to fill with the RavenDB connection string.
+    required: false
+    default: "RavenDBSingleNodeUrl"
+  cluster-connection-string-name:
+    description: The name of the environment variable to fill with the comma seperated RavenDB cluster connection strings.
+    required: false
+    default: "CommaSeparatedRavenClusterUrls"
+  ravendb-license:
+    description: The RavenDB license as a single line JSON string
+    required: true
+  ravendb-version:
+    description: The RavenDB container version
+    required: false
+    default: "5.3"
+  ravendb-mode:
+    description: The RavenDB server mode (Single, Cluster, Both)
+    required: false
+    default: "Single"
+  tag:
+    description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
+    required: true
+runs:
+  using: node12
+  main: dist/index.js
+  post: dist/index.js
