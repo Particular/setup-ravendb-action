@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/Particular/setup-oracle-action#readme",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "@actions/exec": "^1.1.0",
     "dotenv": "^16.0.1",
     "npm-watch": "^0.11.0"
