@@ -77,7 +77,7 @@ To test the cleanup action add a `.env.cleanup` file in the root directory with 
 # State overrides
 STATE_IsPost=true
 STATE_containerName=nameOfPreviouslyCreatedContainer
-STATE ravenMode=nameOfPreviouslyUsedMode
+STATE_ravenMode=nameOfPreviouslyUsedMode
 ```
 
 ```bash
