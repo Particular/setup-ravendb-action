@@ -1,5 +1,5 @@
 {
-  "name": "setup-oracle-action",
+  "name": "setup-ravendb-action",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -18,15 +18,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Particular/setup-oracle-action.git"
+    "url": "git+https://github.com/Particular/setup-ravendb-action.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Particular/setup-oracle-action/issues"
+    "url": "https://github.com/Particular/setup-ravendb-action/issues"
   },
-  "homepage": "https://github.com/Particular/setup-oracle-action#readme",
+  "homepage": "https://github.com/Particular/setup-ravendb-action#readme",
   "dependencies": {
     "@actions/core": "^1.9.1",
     "@actions/exec": "^1.1.0",
