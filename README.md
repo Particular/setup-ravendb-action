@@ -48,7 +48,7 @@ When changing `index.js`, either run `npm run dev` beforehand, which will watch 
 
 ### With Node.js
 
-To test the setup action an `.env.setup` file in the root directory with the following content
+To test the setup action add a new `.env.setup` file in the root directory with the following content
 
 ```ini
 # Input overrides
