@@ -125,7 +125,7 @@ Write-Output "::group::Testing connection"
             Write-Output "Connection to $nodeName successful"
         }
         catch {
-            if ($startDate.AddMinutes(3) -lt (Get-Date)) {
+            if ($startDate.AddMinutes(5) -lt (Get-Date)) {
                 throw "Unable to connect to $nodeName"
             }
             Start-Sleep -Seconds 10
