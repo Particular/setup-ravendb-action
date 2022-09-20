@@ -80,9 +80,12 @@ elseif ($runnerOs -eq "Windows") {
         # echo will mess up the return value
         Write-Debug "Tagging container image"
         $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
+        Write-Output "Going to tag container $hostname with tag $tag"
         $ignore = az tag create --resource-id $details.id --tags Package=$tag RunnerOS=$runnerOs Commit=$commit $dateTag
         return $details.ipAddress.fqdn
     }
+
+    Write-Output "Planning to tag $Tag"
 
     $NewRavenDBNodeDef = $function:NewRavenDBNode.ToString()
     @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
@@ -93,6 +96,7 @@ elseif ($runnerOs -eq "Windows") {
         $instanceId = $_.ToLower()
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
+        Write-Ouput "Executing NewRavenDB node with tag $Tag"
         $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $Tag
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
