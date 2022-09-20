@@ -84,8 +84,6 @@ elseif ($runnerOs -eq "Windows") {
         return $details.ipAddress.fqdn
     }
 
-    Write-Output "Planning to tag $Tag"
-
     $NewRavenDBNodeDef = $function:NewRavenDBNode.ToString()
     @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
         $function:NewRavenDBNode = $using:NewRavenDBNodeDef
@@ -96,7 +94,6 @@ elseif ($runnerOs -eq "Windows") {
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
         $tagName = $using:Tag
-        Write-Output "Executing NewRavenDB node with tag $tagName"
         $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tagName
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
@@ -128,10 +125,10 @@ Write-Output "::group::Testing connection"
             Write-Output "Connection to $nodeName successful"
         }
         catch {
-            if ($startDate.AddMinutes(2) -lt (Get-Date)) {
+            if ($startDate.AddMinutes(3) -lt (Get-Date)) {
                 throw "Unable to connect to $nodeName"
             }
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 10
         }
     } While ($tcpClient.Connected -ne "True")
     $tcpClient.Close()
