@@ -93,7 +93,7 @@ elseif ($runnerOs -eq "Windows") {
         $instanceId = $_.ToLower()
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
-        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA
+        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $Tag
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
     }
