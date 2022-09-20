@@ -23,8 +23,18 @@ if ($runnerOs -eq "Linux") {
 }
 elseif ($runnerOs -eq "Windows") {
     Write-Output "Deleting Azure container(s) $ContainerName-*"
-    $containersToDelete = az container list --resource-group $resourceGroup --query "[?contains(name, '$($ContainerName)')].id" --output tsv
-    az container delete --ids $containersToDelete --yes --output none
+    $containersToDelete = az container list --resource-group $resourceGroup --query "[?contains(name, '$($ContainerName)')].name" | ConvertFrom-Json
+
+    foreach ($container in $containersToDelete) {
+        try {
+            Write-Output "Deleting container $container..."
+            $ignore = az container delete --name $container --resource-group $resourceGroup --yes | ConvertFrom-Json
+        }
+        catch {
+            Write-Output "Error cleaning up container"
+            Write-Output $_
+        }
+    }
 }
 else {
     Write-Output "$runnerOs not supported"
