@@ -78,9 +78,8 @@ elseif ($runnerOs -eq "Windows") {
         $details = az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS="--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888" | ConvertFrom-Json
 
         # echo will mess up the return value
-        Write-Debug "Tagging container image"
+        Write-Debug "Tagging container image $hostname with tag $tag"
         $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
-        Write-Output "Going to tag container $hostname with tag $tag"
         $ignore = az tag create --resource-id $details.id --tags Package=$tag RunnerOS=$runnerOs Commit=$commit $dateTag
         return $details.ipAddress.fqdn
     }
@@ -96,8 +95,9 @@ elseif ($runnerOs -eq "Windows") {
         $instanceId = $_.ToLower()
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
-        Write-Output "Executing NewRavenDB node with tag $Tag"
-        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $Tag
+        $tagName = $using:Tag
+        Write-Output "Executing NewRavenDB node with tag $tagName"
+        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tagName
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
     }
