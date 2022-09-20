@@ -96,7 +96,7 @@ elseif ($runnerOs -eq "Windows") {
         $instanceId = $_.ToLower()
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
-        Write-Ouput "Executing NewRavenDB node with tag $Tag"
+        Write-Output "Executing NewRavenDB node with tag $Tag"
         $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $Tag
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
