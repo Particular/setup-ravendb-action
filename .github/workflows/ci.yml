@@ -33,7 +33,7 @@ jobs:
       - name: Run
         uses: ./
         with:
-          ravendb-license: ${{ secrets.RAVEN_LICENSE }}
+          ravendb-license: ${{ secrets.RAVENDB_LICENSE }}
           ravendb-mode: ${{ matrix.cluster-type.label }}
           tag: setup-ravendb-action
       - name: Validate
