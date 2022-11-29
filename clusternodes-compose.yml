@@ -2,7 +2,7 @@ version: "3"
 services:
   leader:
     container_name: ${CONTAINER_NAME}-leader
-    image: ravendb/ravendb:${RAVENDB_VERSION}-ubuntu-latest
+    image: ravendb/ravendb:${RAVENDB_VERSION}
     ports:
       - 8081:8080
       - 38889:38888
@@ -21,7 +21,7 @@ services:
         ipv4_address: 172.29.1.1
   follower1:
     container_name: ${CONTAINER_NAME}-follower1
-    image: ravendb/ravendb:${RAVENDB_VERSION}-ubuntu-latest
+    image: ravendb/ravendb:${RAVENDB_VERSION}
     depends_on:
       - leader
     ports:
@@ -42,7 +42,7 @@ services:
         ipv4_address: 172.29.1.2
   follower2:
     container_name: ${CONTAINER_NAME}-follower2
-    image: ravendb/ravendb:${RAVENDB_VERSION}-ubuntu-latest
+    image: ravendb/ravendb:${RAVENDB_VERSION}
     depends_on:
       - leader
     ports:

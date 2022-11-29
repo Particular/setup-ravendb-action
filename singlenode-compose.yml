@@ -2,7 +2,7 @@ version: "3"
 services:
   singlenode:
     container_name: ${CONTAINER_NAME}
-    image: ravendb/ravendb:${RAVENDB_VERSION}-ubuntu-latest
+    image: ravendb/ravendb:${RAVENDB_VERSION}
     ports:
       - 8080:8080
       - 38888:38888
