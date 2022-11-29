@@ -24,10 +24,10 @@ jobs:
             os-name: Linux
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v2.5.0
       - name: Azure login
         if: matrix.os-name == 'Windows'
-        uses: azure/login@v1.3.0
+        uses: azure/login@v1.4.7
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Run
