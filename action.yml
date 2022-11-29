@@ -15,7 +15,7 @@ inputs:
   ravendb-version:
     description: The RavenDB container version
     required: false
-    default: "5.3"
+    default: "5.4"
   ravendb-mode:
     description: The RavenDB server mode (Single, Cluster, Both)
     required: false
