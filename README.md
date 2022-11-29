@@ -14,7 +14,7 @@ steps:
     single-connection-string-name: <my connection string name for the single node>
     cluster-connection-string-name: <my connection string name for the cluster nodes>
     ravendb-license: <Single Line JSON License String>
-    ravendb-version: <RavenDB Version>
+    ravendb-version: <RavenDB Container Tag Name>
     ravendb-mode: <RavenDB Server Mode>
     tag: <my tag>
 ```

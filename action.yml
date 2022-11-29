@@ -13,9 +13,9 @@ inputs:
     description: The RavenDB license as a single line JSON string
     required: true
   ravendb-version:
-    description: The RavenDB container version
+    description: The RavenDB container tag name
     required: false
-    default: "5.4"
+    default: "5.4-ubuntu-latest"
   ravendb-mode:
     description: The RavenDB server mode (Single, Cluster, Both)
     required: false
