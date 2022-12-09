@@ -24,7 +24,7 @@ jobs:
             os-name: Linux
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.5.0
+        uses: actions/checkout@v3.1.0
       - name: Azure login
         if: matrix.os-name == 'Windows'
         uses: azure/login@v1.4.7
