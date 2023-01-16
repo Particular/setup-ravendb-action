@@ -1,8 +1,6 @@
 $license=$args[0]
 Write-Output $license
-$hostip=$args[1]
-Write-Output $hostip 
-$fqdnRavenDB = @{ leader = "$($hostip):8081"; follower1 = "$($hostip):8082"; follower2 = "$($hostip):8083" }
+$fqdnRavenDB = @{ leader = "127.0.0.1:8081"; follower1 = "127.0.0.1:8082"; follower2 = "127.0.0.1:8083" }
 @($fqdnRavenDB.keys) | ForEach-Object -Parallel {
     $hashTable = $using:fqdnRavenDB;
     $tcpClient = New-Object Net.Sockets.TcpClient
