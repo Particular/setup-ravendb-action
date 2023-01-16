@@ -9,6 +9,7 @@ services:
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
+      - RAVEN_Logs_Mode=Information
       - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_PublicServerUrl=http://leader:8080
       - RAVEN_PublicServerUrl_Tcp=tcp://leader:38888
@@ -23,6 +24,7 @@ services:
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
+      - RAVEN_Logs_Mode=Information
       - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_PublicServerUrl=http://follower1:8080
       - RAVEN_PublicServerUrl_Tcp=tcp://follower1:38888
@@ -37,6 +39,7 @@ services:
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
+      - RAVEN_Logs_Mode=Information
       - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_PublicServerUrl=http://follower2:8080
       - RAVEN_PublicServerUrl_Tcp=tcp://follower2:38888
