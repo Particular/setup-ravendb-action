@@ -17,13 +17,16 @@ $ravenIpsAndPortsToVerify = @{}
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
-    # This makes sure host.docker.internal is resolvable. Windows Docker adds this automatically on Linux we have to do it manually
+    # This makes sure host.docker.internal is resolvable.
     bash -c "echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts"
 
     $powershellVersion = "lts-alpine-3.14"
     $powerShellScriptDirectory = "/var/ravendb"
 }
 elseif ($runnerOs -eq "Windows") {
+    # This makes sure host.docker.internal is resolvable.
+    Add-Content -Path $env:windir\System32\drivers\etc\hosts -Value "`n127.0.0.1`thost.docker.internal" -Force
+
     $powershellVersion = "lts-nanoserver-1809"
     $powerShellScriptDirectory = "c:/ravendb"
 }
