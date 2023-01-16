@@ -9,22 +9,6 @@ services:
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
-      - "RAVEN_ServerUrl=http://127.0.0.1:8080"
-      - "RAVEN_ServerUrl_Tcp=tcp://127.0.0.1:38888"
-  singlenodesetup:
-    container_name: singlenodesetup
-    image: mcr.microsoft.com/powershell:${POWERSHELL_VERSION}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ${CURRENT_DIRECTORY}:${POWERSHELL_SCRIPT_DIRECTORY}
-    entrypoint:
-      [
-        "pwsh",
-        "-command",
-        "&.${POWERSHELL_SCRIPT_DIRECTORY}/setup_singlenode.ps1",
-        "'${LICENSE}'",
-      ]
-    restart: "no"
-    depends_on:
-      - singlenode
+      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
+      - RAVEN_PublicServerUrl=http://singlenode:8080
+      - RAVEN_PublicServerUrl_Tcp=tcp://singlenode:38888

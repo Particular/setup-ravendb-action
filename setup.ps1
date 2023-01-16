@@ -38,44 +38,24 @@ $Env:POWERSHELL_SCRIPT_DIRECTORY = $powerShellScriptDirectory
 
 if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     docker-compose -f singlenode-compose.yml up --detach
-    $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
+
+    Write-Output "Activating license on leader"
+    Invoke-WebRequest "http://singlenode:8080/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
 }
 if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     docker-compose -f clusternodes-compose.yml up --detach
-    $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
-    $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
-    $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
+
+    # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
+    Write-Output "Activating license on leader"
+
+    Invoke-WebRequest "http://leader:8081/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
+    Invoke-WebRequest "http://leader:8081/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://follower1:8082") 
+    Invoke-WebRequest "http://leader:8081/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://follower2:8082)")
+    Invoke-WebRequest "http://leader:8081/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
 }
 
 # write the connection string to the specified environment variable
-"$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
-"$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
-
-Write-Output "::group::Testing connection"
-
-@($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
-    $startDate = Get-Date
-    $hashTable = $using:ravenIpsAndPortsToVerify
-    $tcpClient = New-Object Net.Sockets.TcpClient
-    $nodeName = $_
-    $nodeInfo = $hashTable[$nodeName]
-    Write-Output "::add-mask::$($nodeInfo.Ip)"
-    Write-Output "Verifying connection $nodeName"
-    do {
-        try {
-            Write-Output "Trying to connect to $nodeName on port $($nodeInfo.Port)"
-            $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
-            Write-Output "Connection to $nodeName successful"
-        }
-        catch {
-            if ($startDate.AddMinutes(5) -lt (Get-Date)) {
-                throw "Unable to connect to $nodeName"
-            }
-            Start-Sleep -Seconds 10
-        }
-    } While ($tcpClient.Connected -ne "True")
-    $tcpClient.Close()
-    Write-Output "Connection to $nodeName verified"
-}
-
-Write-Output "::endgroup::"
+"$($SingleConnectionStringName)=http://singlenode:8080" >> $Env:GITHUB_ENV
+"$($ClusterConnectionStringName)=http://leader:8081,http://follower1:8082,http://follower2:8083" >> $Env:GITHUB_ENV

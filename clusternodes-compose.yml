@@ -4,55 +4,39 @@ services:
     container_name: ${CONTAINER_NAME}-leader
     image: ravendb/ravendb:${RAVENDB_VERSION}
     ports:
-      - 8081:8081
-      - 38889:38889
+      - 8081:8080
+      - 38889:38888
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
-      - "RAVEN_ServerUrl=http://127.0.0.1:8081"
-      - "RAVEN_ServerUrl_Tcp=tcp://127.0.0.1:38889"
+      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
+      - RAVEN_PublicServerUrl=http://leader:8080
+      - RAVEN_PublicServerUrl_Tcp=tcp://leader:38888
   follower1:
     container_name: ${CONTAINER_NAME}-follower1
     image: ravendb/ravendb:${RAVENDB_VERSION}
     depends_on:
       - leader
     ports:
-      - 8082:8082
-      - 38890:38890
+      - 8082:8080
+      - 38890:38888
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
-      - "RAVEN_ServerUrl=http://127.0.0.1:8082"
-      - "RAVEN_ServerUrl_Tcp=tcp://127.0.0.1:38890"
+      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
+      - RAVEN_PublicServerUrl=http://leader:8080
+      - RAVEN_PublicServerUrl_Tcp=tcp://leader:38888
   follower2:
     container_name: ${CONTAINER_NAME}-follower2
     image: ravendb/ravendb:${RAVENDB_VERSION}
     depends_on:
       - leader
     ports:
-      - 8083:8083
-      - 38891:38891
+      - 8083:8080
+      - 38891:38888
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
-      - "RAVEN_ServerUrl=http://127.0.0.1:8083"
-      - "RAVEN_ServerUrl_Tcp=tcp://127.0.0.1:38891"
-  clustersetup:
-    container_name: clustersetup
-    image: mcr.microsoft.com/powershell:${POWERSHELL_VERSION}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ${CURRENT_DIRECTORY}:${POWERSHELL_SCRIPT_DIRECTORY}
-    entrypoint:
-      [
-        "pwsh",
-        "-command",
-        "&.${POWERSHELL_SCRIPT_DIRECTORY}/setup_cluster.ps1",
-        "'${LICENSE}'",
-      ]
-    restart: "no"
-    depends_on:
-      - leader
-      - follower1
-      - follower2
+      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
+      - RAVEN_PublicServerUrl=http://leader:8080
+      - RAVEN_PublicServerUrl_Tcp=tcp://leader:38888
