@@ -7,7 +7,6 @@ services:
       - 8080:8080
       - 38888:38888
     environment:
-      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
       - "RAVEN_ServerUrl=http://0.0.0.0:8080"

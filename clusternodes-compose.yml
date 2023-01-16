@@ -7,7 +7,6 @@ services:
       - 8081:8081
       - 38889:38889
     environment:
-      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
       - "RAVEN_ServerUrl=http://0.0.0.0:8081"
@@ -21,7 +20,6 @@ services:
       - 8082:8082
       - 38890:38890
     environment:
-      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
       - "RAVEN_ServerUrl=http://0.0.0.0:8082"
@@ -35,7 +33,6 @@ services:
       - 8083:8083
       - 38891:38891
     environment:
-      - RAVEN_Security_UnsecuredAccessAllowed=PublicNetwork
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
       - "RAVEN_ServerUrl=http://0.0.0.0:8083"
