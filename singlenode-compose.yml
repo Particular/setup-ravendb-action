@@ -9,8 +9,8 @@ services:
     environment:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
-      - "RAVEN_ServerUrl=http://0.0.0.0:8080"
-      - "RAVEN_ServerUrl_Tcp=tcp://0.0.0.0:38888"
+      - "RAVEN_ServerUrl=http://127.0.0.1:8080"
+      - "RAVEN_ServerUrl_Tcp=tcp://127.0.0.1:38888"
   singlenodesetup:
     container_name: singlenodesetup
     image: mcr.microsoft.com/powershell:${POWERSHELL_VERSION}
