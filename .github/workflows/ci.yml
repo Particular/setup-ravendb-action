@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019, ubuntu-20.04]
+        os: [windows-2019, ubuntu-22.04]
         cluster-type:
           - label: 'Single'
           - label: 'Cluster'
@@ -20,21 +20,19 @@ jobs:
           # Add os-name alias for job name
           - os: windows-2019
             os-name: Windows
-          - os: ubuntu-20.04
+            raven-tag: 5.4-windows-latest
+          - os: ubuntu-22.04
             os-name: Linux
+            raven-tag: 5.4-ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3.1.0
-      - name: Azure login
-        if: matrix.os-name == 'Windows'
-        uses: azure/login@v1.4.7
-        with:
-          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Run
         uses: ./
         with:
           ravendb-license: ${{ secrets.RAVENDB_LICENSE }}
           ravendb-mode: ${{ matrix.cluster-type.label }}
+          ravendb-version: ${{ matrix.raven-tag }}
           tag: setup-ravendb-action
       - name: Validate
         shell: pwsh

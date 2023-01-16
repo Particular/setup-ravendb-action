@@ -21,16 +21,16 @@ services:
         ipv4_address: 172.28.1.1
   singlenodesetup:
     container_name: singlenodesetup
-    image: mcr.microsoft.com/powershell:latest
+    image: mcr.microsoft.com/powershell:${POWERSHELL_VERSION}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./setup_singlenode.ps1:/var/ravendb/setup_singlenode.ps1
+      - ${CURRENT_DIRECTORY}:${POWERSHELL_SCRIPT_DIRECTORY}
     entrypoint:
       [
         "pwsh",
         "-command",
-        "&./var/ravendb/setup_singlenode.ps1",
+        "&.${POWERSHELL_SCRIPT_DIRECTORY}/setup_singlenode.ps1",
         "'${LICENSE}'",
         "host.docker.internal",
       ]
