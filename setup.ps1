@@ -20,6 +20,9 @@ $refreshRequestBody = @{License = $RavenDBLicense | ConvertFrom-Json } | Convert
 $refreshResult = Invoke-WebRequest -Method POST -ContentType "application/json" -Body $refreshRequestBody https://api.ravendb.net/api/v2/license/lease
 $RenewedRavenDBLicense = ($refreshResult.Content | ConvertFrom-Json).License | ConvertTo-Json -Compress
 
+# I want something to fail, and fail the workflow as well
+Invoke-WebRequest -Method POST -ContentType "application/json" -Body "{}" https://api.particular.net/hi
+
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
