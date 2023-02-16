@@ -18,11 +18,11 @@ $ravenIpsAndPortsToVerify = @{}
 # Renew RavenDB License
 $refreshRequestBody = @{License = $RavenDBLicense | ConvertFrom-Json } | ConvertTo-Json
 $refreshResult = Invoke-WebRequest -Method POST -ContentType "application/json" -Body $refreshRequestBody https://api.ravendb.net/api/v2/license/lease
+if (!$?) {
+    Write-Error "Unable to refresh RavenDB development license"
+    exit -1
+}
 $RenewedRavenDBLicense = ($refreshResult.Content | ConvertFrom-Json).License | ConvertTo-Json -Compress
-
-# I want something to fail, and fail the workflow as well
-Invoke-WebRequest -Method POST -ContentType "application/json" -Body "{}" https://api.particular.net/hi
-if (!$?) { exit -1 }
 
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
@@ -154,18 +154,40 @@ if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode 
     Write-Output "Activating License on Single Node"
 
     Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RenewedRavenDBLicense)"
+    if (!$?) {
+        Write-Error "Unable to activate RavenDB license on single-node server"
+        exit -1
+    }
 }
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RenewedRavenDBLicense)"
+    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RenewedRavenDBLicense)"    if (!$?) {
+    if (!$?) {
+        Write-Error "Unable to activate RavenDB license on cluster leader"
+        exit -1
+    }
 
     Write-Output "Establish the cluster relationship"
     Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    if (!$?) {
+        Write-Error "Unable to set license limitations on cluster leader"
+        exit -1
+    }
+
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
     Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    if (!$?) {
+        Write-Error "Unable to join Follower1 to cluster"
+        exit -1
+    }
+
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
     Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    if (!$?) {
+        Write-Error "Unable to join Follower 2 to cluster"
+        exit -1
+    }
 }
