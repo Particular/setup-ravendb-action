@@ -15,13 +15,18 @@ $runnerOs = $Env:RUNNER_OS ?? "Linux"
 $resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
 $ravenIpsAndPortsToVerify = @{}
 
+# Renew RavenDB License
+$refreshRequestBody = @{License = $RavenDBLicense | ConvertFrom-Json } | ConvertTo-Json
+$refreshResult = Invoke-WebRequest -Method POST -ContentType "application/json" -Body $refreshRequestBody https://api.ravendb.net/api/v2/license/lease
+$RenewedRavenDBLicense = ($refreshResult.Content | ConvertFrom-Json).License | ConvertTo-Json -Compress
+
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
     # This makes sure host.docker.internal is resolvable. Windows Docker adds this automatically on Linux we have to do it manually
     bash -c "echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts"
 
-    $Env:LICENSE = $RavenDBLicense
+    $Env:LICENSE = $RenewedRavenDBLicense
     $Env:RAVENDB_VERSION = $RavenDBVersion
     $Env:CONTAINER_NAME = $ContainerName
 
@@ -144,14 +149,14 @@ Write-Output "::endgroup::"
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
+    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RenewedRavenDBLicense)"
 }
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RavenDBLicense)"
+    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($RenewedRavenDBLicense)"
 
     Write-Output "Establish the cluster relationship"
     Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
