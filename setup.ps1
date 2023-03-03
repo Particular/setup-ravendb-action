@@ -140,8 +140,6 @@ Write-Output "::group::Testing connection"
 
 Write-Output "::endgroup::"
 
-
-
 # This is not entirely nice because the activitation for linux happens inside the compose infrastructure while for windows
 # we have to do it here. The cluster checks during the setup phase whether it can reach the nodes and that was easier to do within
 # the compose setup container. Maybe one day we will find a way to clean this up a bit.
@@ -179,7 +177,7 @@ if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode 
         exit -1
     }
 
-    ValidateRavenLicense "Single-Node Server" "$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port"
+    ValidateRavenLicense "Single-Node Server" "$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)"
 }
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on leader in the cluster"
