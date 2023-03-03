@@ -151,7 +151,7 @@ function ValidateRavenLicense {
     )
     
     Write-Output "Checking license details on $name"
-    $licenseCheck = Invoke-WebRequest "http://$($leader)/license/status" -Method GET | ConvertFrom-Json
+    $licenseCheck = Invoke-WebRequest "http://$($hostAndPort)/license/status" -Method GET | ConvertFrom-Json
     if (!$?) {
         Write-Error "Unable to check license details on $name"
         exit -1
