@@ -24,6 +24,6 @@ inputs:
     description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
     required: true
 runs:
-  using: node20
+  using: node16
   main: dist/index.js
   post: dist/index.js
