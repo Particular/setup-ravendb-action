@@ -22,4 +22,4 @@ $tcpClient.Close()
 Write-Output "Connection to the single node verified"
 
 Write-Output "Activating license on leader"
-Invoke-WebRequest "http://$($fqdnRavenDB['singlenode'])/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)"
+Invoke-WebRequest "http://$($fqdnRavenDB['singlenode'])/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($license)" -MaximumRetryCount 5 -RetryIntervalSec 10
