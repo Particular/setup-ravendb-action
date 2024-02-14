@@ -151,7 +151,7 @@ function ValidateRavenLicense {
     )
     
     Write-Output "Checking license details on $name"
-    $licenseCheck = Invoke-WebRequest "http://$($hostAndPort)/license/status" -Method GET | ConvertFrom-Json -MaximumRetryCount 5 -RetryIntervalSec 10
+    $licenseCheck = Invoke-WebRequest "http://$($hostAndPort)/license/status" -Method GET -MaximumRetryCount 5 -RetryIntervalSec 10 | ConvertFrom-Json
     if (!$?) {
         Write-Error "Unable to check license details on $name"
         exit -1
