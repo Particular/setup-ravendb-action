@@ -1,9 +1,9 @@
 name: CI
 on:
-  pull_request:
   push:
     branches:
       - main
+  pull_request:
   workflow_dispatch:
 jobs:
   ci:
@@ -17,7 +17,6 @@ jobs:
           - label: 'Cluster'
           - label: 'Both'
         include:
-          # Add os-name alias for job name
           - os: windows-2022
             name: Windows
           - os: ubuntu-22.04
