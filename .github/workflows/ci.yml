@@ -7,26 +7,26 @@ on:
   workflow_dispatch:
 jobs:
   ci:
-    name: ${{ matrix.os-name }}-${{ matrix.cluster-type.label }}
+    name: ${{ matrix.name }}-${{ matrix.cluster-type.label }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019, ubuntu-20.04]
+        os: [windows-2022, ubuntu-22.04]
         cluster-type:
           - label: 'Single'
           - label: 'Cluster'
           - label: 'Both'
         include:
           # Add os-name alias for job name
-          - os: windows-2019
-            os-name: Windows
-          - os: ubuntu-20.04
-            os-name: Linux
+          - os: windows-2022
+            name: Windows
+          - os: ubuntu-22.04
+            name: Linux
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
       - name: Azure login
-        if: matrix.os-name == 'Windows'
+        if: matrix.name == 'Windows'
         uses: azure/login@v1.6.1
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
