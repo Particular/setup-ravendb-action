@@ -151,7 +151,7 @@ function ValidateRavenLicense {
     )
     
     Write-Output "Checking license details on $name"
-    $licenseCheck = Invoke-WebRequest "http://$($hostAndPort)/license/status" -Method GET | ConvertFrom-Json
+    $licenseCheck = Invoke-WebRequest "http://$($hostAndPort)/license/status" -Method GET -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30 | ConvertFrom-Json
     if (!$?) {
         Write-Error "Unable to check license details on $name"
         exit -1
@@ -171,7 +171,7 @@ function ValidateRavenLicense {
 if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)"
+    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on single-node server"
         exit -1
@@ -184,7 +184,7 @@ if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)"
+    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on cluster leader"
         exit -1
@@ -193,21 +193,21 @@ if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode
     ValidateRavenLicense "Cluster Leader" $leader
 
     Write-Output "Establish the cluster relationship"
-    Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to set license limitations on cluster leader"
         exit -1
     }
 
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower1 to cluster"
         exit -1
     }
 
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' }
+    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower 2 to cluster"
         exit -1
