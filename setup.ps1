@@ -18,6 +18,8 @@ $ravenIpsAndPortsToVerify = @{}
 # Format RavenDB license as single-line
 $FormattedRavenDBLicense = ($RavenDBLicense | ConvertFrom-Json) | ConvertTo-Json -Compress
 
+Write-Output "If this action succeeded but you got related errors downstream, please record them here https://github.com/Particular/setup-ravendb-action/issues/30"
+
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
 
