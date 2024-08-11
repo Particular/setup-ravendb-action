@@ -23,6 +23,16 @@ inputs:
   tag:
     description: When the action runs on a Windows agent, this tag is applied to the Azure container created by the action.
     required: true
+  registry-login-server:
+    description: The container registry to log in to, if required
+    required: false
+    default: index.docker.io
+  registry-username:
+    description: The username to log in to the container registry. Will not attempt login if not provided.
+    required: false
+  registry-password:
+    description: The password to log in to the container registry. Will not attempt login if not provided.
+    required: false     
 runs:
   using: node20
   main: dist/index.js
