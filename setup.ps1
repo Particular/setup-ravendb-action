@@ -152,8 +152,10 @@ else {
 
 Write-Output "::group::Testing connection"
 
+$connectionErrors = [hashtable]::Synchronized(@{})
 @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
     $startDate = Get-Date
+    $errorTable = $using:connectionErrors
     $hashTable = $using:ravenIpsAndPortsToVerify
     $tcpClient = New-Object Net.Sockets.TcpClient
     $nodeName = $_
@@ -168,13 +170,22 @@ Write-Output "::group::Testing connection"
         }
         catch {
             if ($startDate.AddMinutes(5) -lt (Get-Date)) {
-                throw "Unable to connect to $nodeName"
+                $errorTable[$nodeName] = "Unable to connect to $nodeName"
+                break
             }
             Start-Sleep -Seconds 10
         }
     } While ($tcpClient.Connected -ne "True")
     $tcpClient.Close()
-    Write-Output "Connection to $nodeName verified"
+    if (-not $errorTable.ContainsKey($nodeName)) {
+        Write-Output "Connection to $nodeName verified"
+    }
+}
+
+if ($connectionErrors.Count -gt 0) {
+    $errorMessages = $connectionErrors.GetEnumerator() | ForEach-Object { "$($_.Key): $($_.Value)" }
+    $errorMessageString = $errorMessages -join ', '
+    throw "One or more connections failed: $errorMessageString"
 }
 
 Write-Output "::endgroup::"
