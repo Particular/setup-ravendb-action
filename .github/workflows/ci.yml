@@ -36,6 +36,8 @@ jobs:
           ravendb-license: ${{ secrets.RAVENDB_LICENSE }}
           ravendb-mode: ${{ matrix.cluster-type.label }}
           tag: setup-ravendb-action
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Validate
         shell: pwsh
         run: |

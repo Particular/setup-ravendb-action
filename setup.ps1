@@ -6,7 +6,10 @@ param (
     [string]$RavenDBLicense,
     [string]$RavenDBVersion,
     [string]$RavenDBMode,
-    [string]$Tag
+    [string]$Tag,
+    [string]$RegistryLoginServer = "index.docker.io",
+    [string]$RegistryUser,
+    [string]$RegistryPass
 )
 
 Set-Location $ScriptDirectory
@@ -79,19 +82,45 @@ elseif ($runnerOs -eq "Windows") {
             $runnerOs,
             $ravenDBVersion,
             $commit,
-            $tag
+            $tag,
+            $registryLoginServer,
+            $registryUser,
+            $registryPass
         )
         $hostname = "$prefix-$instanceId"
-        # echo will mess up the return value
-        Write-Debug "Creating RavenDB container $hostname in $region (This can take a while.)"
         $containerImage = "ravendb/ravendb:$($ravenDBVersion)"
-        $details = az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS="--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888" | ConvertFrom-Json
+        $azureContainerCreate = "az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS='--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888'"
+
+        if ($registryUser -and $registryPass) {
+            # echo will mess up the return value
+            Write-Debug "Creating container with login to $registryLoginServer"
+            $azureContainerCreate = "$azureContainerCreate --registry-login-server $registryLoginServer --registry-username $registryUser --registry-password $registryPass"
+        } else {
+            # echo will mess up the return value
+            Write-Debug "Creating container with anonymous credentials"
+        }
+
+        # echo will mess up the return value
+        Write-Debug "Creating RavenDB container $hostname in $region (this can take a while)"
+        $containerJson = Invoke-Expression $azureContainerCreate
+        
+        if (!$containerJson) {
+            # echo will mess up the return value
+            Write-Debug "Failed to create container $hostname in $region"
+            exit 1;
+        }
+        
+        $containerDetails = $containerJson | ConvertFrom-Json
+
+        $packageTag = "Package=$tagName"
+        $runnerOsTag = "RunnerOS=$($Env:RUNNER_OS)"
+        $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
+        $commitTag = "Commit=$commit"
 
         # echo will mess up the return value
         Write-Debug "Tagging container image $hostname with tag $tag"
-        $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
-        $ignore = az tag create --resource-id $details.id --tags Package=$tag RunnerOS=$runnerOs Commit=$commit $dateTag
-        return $details.ipAddress.fqdn
+        az tag create --resource-id $containerDetails.id --tags $packageTag $runnerOsTag $commitTag $dateTag  | Out-Null
+        return $containerDetails.ipAddress.fqdn
     }
 
     $NewRavenDBNodeDef = $function:NewRavenDBNode.ToString()
@@ -103,8 +132,11 @@ elseif ($runnerOs -eq "Windows") {
         $instanceId = $_.ToLower()
         $runnerOs = $using:runnerOs
         $ravenDBVersion = $using:ravenDBVersion
-        $tagName = $using:Tag
-        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tagName
+        $tag = $using:Tag
+        $registryLoginServer = $using:RegistryLoginServer
+        $registryUser = $using:RegistryUser
+        $registryPass = $using:RegistryPass
+        $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tag $registryLoginServer $registryUser $registryPass
         $hashTable = $using:ravenIpsAndPortsToVerify
         $hashTable[$_].Ip = $detail
     }

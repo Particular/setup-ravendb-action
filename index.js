@@ -21,6 +21,9 @@ let ravenLicense = core.getInput('ravendb-license');
 let ravenVersion = core.getInput('ravendb-version');
 let ravenMode = core.getInput('ravendb-mode');
 let tag = core.getInput('tag');
+let registryLoginServer = core.getInput('registry-login-server');
+let registryUser = core.getInput('registry-username');
+let registryPass = core.getInput('registry-password');
 
 async function run() {
 
@@ -49,7 +52,10 @@ async function run() {
                     '-RavenDBLicense', ravenLicense,
                     '-RavenDBVersion', ravenVersion,
                     '-RavenDBMode', ravenMode,
-                    '-Tag', tag
+                    '-Tag', tag,
+                    '-RegistryLoginServer', registryLoginServer,
+                    '-RegistryUser', registryUser,
+                    '-RegistryPass', registryPass                      
                 ]);
 
         } else { // Cleanup
