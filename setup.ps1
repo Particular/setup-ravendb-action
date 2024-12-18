@@ -89,7 +89,7 @@ elseif ($runnerOs -eq "Windows") {
         )
         $hostname = "$prefix-$instanceId"
         $containerImage = "ravendb/ravendb:$($ravenDBVersion)"
-        $azureContainerCreate = "az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --environment-variables RAVEN_ARGS='--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888'"
+        $azureContainerCreate = "az container create --image $containerImage --name $hostname --location $region --dns-name-label $hostname --resource-group $resourceGroup --cpu 4 --memory 8 --ports 8080 38888 --ip-address public --os-type Linux --environment-variables RAVEN_ARGS='--License.Eula.Accepted=true --Setup.Mode=None --Security.UnsecuredAccessAllowed=PublicNetwork --ServerUrl=http://0.0.0.0:8080 --PublicServerUrl=http://$($hostname).$($region).azurecontainer.io:8080 --ServerUrl.Tcp=tcp://0.0.0.0:38888 --PublicServerUrl.Tcp=tcp://$($hostname).$($region).azurecontainer.io:38888'"
 
         if ($registryUser -and $registryPass) {
             # echo will mess up the return value
