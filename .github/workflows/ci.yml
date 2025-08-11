@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4.3.0
       - name: Azure login
         if: matrix.name == 'Windows'
         uses: azure/login@v2.3.0
