@@ -49,9 +49,13 @@ if ($runnerOs -eq "Linux") {
         $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
     }
 
-    # write the connection string to the specified environment variable
-    "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
-    "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
+    # write the connection string to the specified environment variable depending on the mode
+    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+        "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
+    }
+    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+        "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
+    }
 }
 elseif ($runnerOs -eq "Windows") {
     Write-Output "Running RavenDB in container $($ContainerName) using Azure"
@@ -65,7 +69,7 @@ elseif ($runnerOs -eq "Windows") {
     }
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = ""; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = ""; Port = 8080 })
@@ -141,9 +145,13 @@ elseif ($runnerOs -eq "Windows") {
         $hashTable[$_].Ip = $detail
     }
 
-    # write the connection string to the specified environment variable
-    "$($SingleConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)" >> $Env:GITHUB_ENV
-    "$($ClusterConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)" >> $Env:GITHUB_ENV
+    # write the connection string to the specified environment variable depending on the mode
+    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+        "$($SingleConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)" >> $Env:GITHUB_ENV
+    }
+    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+        "$($ClusterConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)" >> $Env:GITHUB_ENV
+    }
 }
 else {
     Write-Output "$runnerOs not supported"
