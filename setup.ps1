@@ -221,6 +221,9 @@ function ValidateRavenLicense {
 if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
+    # Add a small delay to ensure the server is fully ready
+    Start-Sleep -Seconds 5
+
     Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].IpOrHost):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on single-node server"
@@ -231,6 +234,9 @@ if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
 }
 if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
+
+    # Add a small delay to ensure the server is fully ready
+    Start-Sleep -Seconds 5
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].IpOrHost):$($ravenIpsAndPortsToVerify['Leader'].Port)"
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
