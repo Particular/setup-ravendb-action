@@ -218,7 +218,7 @@ function ValidateRavenLicense {
     }
 }
 
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
     Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].IpOrHost):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
@@ -229,7 +229,7 @@ if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode 
 
     ValidateRavenLicense "Single-Node Server" "$($ravenIpsAndPortsToVerify['Single'].IpOrHost):$($ravenIpsAndPortsToVerify['Single'].Port)"
 }
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
 
     $leader = "$($ravenIpsAndPortsToVerify['Leader'].IpOrHost):$($ravenIpsAndPortsToVerify['Leader'].Port)"
