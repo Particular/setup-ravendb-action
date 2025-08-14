@@ -199,6 +199,8 @@ if ($connectionErrors.Count -gt 0) {
 
 Write-Output "::endgroup::"
 
+Write-Output "::group::Licensing and setting up node(s)"
+
 function ValidateRavenLicense {
     param (
         $name,
@@ -274,3 +276,4 @@ if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         exit -1
     }
 }
+Write-Output "::endgroup::"
