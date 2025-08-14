@@ -30,7 +30,7 @@
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.0",
-    "dotenv": "^16.0.1",
+    "dotenv": "^17.0.0",
     "npm-watch": "^0.11.0"
   }
 }
