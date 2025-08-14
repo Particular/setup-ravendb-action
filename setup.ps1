@@ -51,10 +51,12 @@ if ($runnerOs -eq "Linux") {
 
     # write the connection string to the specified environment variable depending on the mode
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
+        $singleConnectionString = "http://localhost:8080"
+        "$($SingleConnectionStringName)=$($singleConnectionString)" >> $Env:GITHUB_ENV
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-        "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
+        $clusterConnectionString = "http://localhost:8081,http://localhost:8082,http://localhost:8083"
+        "$($ClusterConnectionStringName)=$($clusterConnectionString)" >> $Env:GITHUB_ENV
     }
 }
 elseif ($runnerOs -eq "Windows") {
@@ -147,10 +149,12 @@ elseif ($runnerOs -eq "Windows") {
 
     # write the connection string to the specified environment variable depending on the mode
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        "$($SingleConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)" >> $Env:GITHUB_ENV
+        $singleConnectionString = "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)"
+        "$($SingleConnectionStringName)=$($singleConnectionString)" >> $Env:GITHUB_ENV
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-        "$($ClusterConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)" >> $Env:GITHUB_ENV
+        $clusterConnectionString = "http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)"
+        "$($ClusterConnectionStringName)=$($clusterConnectionString)" >> $Env:GITHUB_ENV
     }
 }
 else {
@@ -226,46 +230,52 @@ function ValidateRavenLicense {
     }
 }
 
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    $singleNodeUrl = $singleConnectionString
+
+    Invoke-WebRequest "$($singleNodeUrl)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on single-node server"
         exit -1
     }
 
-    ValidateRavenLicense "Single-Node Server" "$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)"
+    ValidateRavenLicense "Single-Node Server" ([Uri]$singleNodeUrl).Authority
 }
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
 
-    $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
+    $clusterUrls = $clusterConnectionString.Split(",")
+
+    # First URL is always the leader
+    $leaderUrl = $clusterUrls[0]
+
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on cluster leader"
         exit -1
     }
 
-    ValidateRavenLicense "Cluster Leader" $leader
+    ValidateRavenLicense "Cluster Leader" ([Uri]$leaderUrl).Authority
 
     Write-Output "Establish the cluster relationship"
-    Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to set license limitations on cluster leader"
         exit -1
     }
 
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower1 to cluster"
         exit -1
     }
 
     $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower 2 to cluster"
         exit -1
