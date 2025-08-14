@@ -152,35 +152,42 @@ if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     "$($ClusterConnectionStringName)=$($clusterConnectionString)" >> $Env:GITHUB_ENV
 }
 
-Write-Output "::group::Testing connection"
+Write-Output "::group::Testing HTTP connectivity"
 
 $connectionErrors = [hashtable]::Synchronized(@{})
 @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
     $startDate = Get-Date
     $errorTable = $using:connectionErrors
     $hashTable = $using:ravenIpsAndPortsToVerify
-    $tcpClient = New-Object Net.Sockets.TcpClient
     $nodeName = $_
     $nodeInfo = $hashTable[$nodeName]
+    $nodeUrl = "http://$($nodeInfo.Ip):$($nodeInfo.Port)"
     Write-Output "::add-mask::$($nodeInfo.Ip)"
-    Write-Output "Verifying connection $nodeName"
+    Write-Output "Verifying HTTP connection to $nodeName at $nodeUrl"
+    
+    $connected = $false
     do {
         try {
-            Write-Output "Trying to connect to $nodeName on port $($nodeInfo.Port)"
-            $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
-            Write-Output "Connection to $nodeName successful"
+            Write-Output "Trying HTTP connection to $nodeName at $nodeUrl"
+            
+            $response = Invoke-WebRequest "$nodeUrl/admin/stats" -Method GET -UseBasicParsing -TimeoutSec 30
+            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 300) {
+                $connected = $true
+                Write-Output "HTTP connection to $nodeName successful - Status: $($response.StatusCode)"
+            }
         }
         catch {
             if ($startDate.AddMinutes(5) -lt (Get-Date)) {
-                $errorTable[$nodeName] = "Unable to connect to $nodeName"
+                $errorTable[$nodeName] = "Unable to establish HTTP connection to $nodeName at $nodeUrl"
                 break
             }
+            Write-Output "HTTP connection attempt failed, retrying in 10 seconds..."
             Start-Sleep -Seconds 10
         }
-    } While ($tcpClient.Connected -ne "True")
-    $tcpClient.Close()
+    } While (-not $connected)
+    
     if (-not $errorTable.ContainsKey($nodeName)) {
-        Write-Output "Connection to $nodeName verified"
+        Write-Output "HTTP connection to $nodeName verified"
     }
 }
 
@@ -223,8 +230,6 @@ function ValidateRavenLicense {
 if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
-    Start-Sleep -Seconds 5
-
     $singleNodeUrl = $singleConnectionString
 
     Invoke-WebRequest "$($singleNodeUrl)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
@@ -237,8 +242,6 @@ if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
 }
 if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
-
-    Start-Sleep -Seconds 5
 
     $clusterUrls = $clusterConnectionString.Split(",")
 
