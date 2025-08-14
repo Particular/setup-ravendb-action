@@ -40,13 +40,13 @@ if ($runnerOs -eq "Linux") {
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker compose -f singlenode-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "host.docker.internal"; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker compose -f clusternodes-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
-        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
-        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
+        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "host.docker.internal"; Port = 8081 })
+        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "host.docker.internal"; Port = 8082 })
+        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "host.docker.internal"; Port = 8083 })
     }
 
     # write the connection string to the specified environment variable depending on the mode
