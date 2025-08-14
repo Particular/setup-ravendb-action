@@ -8,41 +8,16 @@ namespace Tests;
 public class ConnectionTests
 {
     [CancelAfter(5000)]
-    [Test]
-    public void Should_establish_connection_to_single_node(CancellationToken cancellationToken)
+    [TestCaseSource(nameof(ValidUrls))]
+    public void Should_establish_connection(string? connectionUrl, string environmentVariable)
     {
-        var connectionUrl = Environment.GetEnvironmentVariable("RavenDBSingleNodeUrl");
-        if (connectionUrl == null)
+        if (connectionUrl is null)
         {
             // Setting the environment variable is assumed to be checked by the CI pipeline
-            Assert.Inconclusive("No RavenDBSingleNodeUrl environment variable set");
+            Assert.Ignore($"No '{environmentVariable}' environment variable set");
         }
 
-        const string databaseName = "SingleNodeConnectionTests";
-        var documentStore = new Raven.Client.Documents.DocumentStore
-        {
-            Urls = [connectionUrl],
-            Database = databaseName,
-        }.Initialize();
-
-        Assert.DoesNotThrowAsync(async () =>
-        {
-            await documentStore.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(databaseName)), cancellationToken);
-        });
-    }
-
-    [CancelAfter(5000)]
-    [Test]
-    public void Should_establish_connection_to_cluster(CancellationToken cancellationToken)
-    {
-        var connectionUrl = Environment.GetEnvironmentVariable("CommaSeparatedRavenClusterUrls");
-        if (connectionUrl == null)
-        {
-            // Setting the environment variable is assumed to be checked by the CI pipeline
-            Assert.Inconclusive("No CommaSeparatedRavenClusterUrls environment variable set");
-        }
-
-        const string databaseName = "ClusterConnectionTests";
+        var databaseName = $"{environmentVariable}ConnectionTests";
         var documentStore = new Raven.Client.Documents.DocumentStore
         {
             Urls = connectionUrl.Split(','),
@@ -51,7 +26,13 @@ public class ConnectionTests
 
         Assert.DoesNotThrowAsync(async () =>
         {
-            await documentStore.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(databaseName)), cancellationToken);
+            await documentStore.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(databaseName)), TestContext.CurrentContext.CancellationToken);
         });
+    }
+
+    public static IEnumerable<string?[]> ValidUrls()
+    {
+        yield return [Environment.GetEnvironmentVariable("RavenDBSingleNodeUrl"), "RavenDBSingleNodeUrl"];
+        yield return [Environment.GetEnvironmentVariable("CommaSeparatedRavenClusterUrls"), "CommaSeparatedRavenClusterUrls"];
     }
 }
