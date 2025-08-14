@@ -69,7 +69,7 @@ elseif ($runnerOs -eq "Windows") {
     }
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = ""; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = ""; Port = 8080 })
