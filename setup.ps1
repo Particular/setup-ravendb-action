@@ -40,13 +40,13 @@ if ($runnerOs -eq "Linux") {
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker compose -f singlenode-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "host.docker.internal"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Address = "host.docker.internal"; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker compose -f clusternodes-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "host.docker.internal"; Port = 8081 })
-        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "host.docker.internal"; Port = 8082 })
-        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "host.docker.internal"; Port = 8083 })
+        $ravenIpsAndPortsToVerify.Add("Leader", @{ Address = "host.docker.internal"; Port = 8081 })
+        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Address = "host.docker.internal"; Port = 8082 })
+        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Address = "host.docker.internal"; Port = 8083 })
     }
 }
 elseif ($runnerOs -eq "Windows") {
@@ -134,7 +134,7 @@ elseif ($runnerOs -eq "Windows") {
         $registryPass = $using:RegistryPass
         $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tag $registryLoginServer $registryUser $registryPass
         $hashTable = $using:ravenIpsAndPortsToVerify
-        $hashTable[$_].Ip = $detail
+        $hashTable[$_].Address = $detail
     }
 }
 else {
@@ -144,11 +144,11 @@ else {
 
 # write the connection string to the specified environment variable depending on the mode
 if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-    $singleConnectionString = "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)"
+    $singleConnectionString = "http://$($ravenIpsAndPortsToVerify['Single'].Address):$($ravenIpsAndPortsToVerify['Single'].Port)"
     "$($SingleConnectionStringName)=$($singleConnectionString)" >> $Env:GITHUB_ENV
 }
 if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-    $clusterConnectionString = "http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)"
+    $clusterConnectionString = "http://$($ravenIpsAndPortsToVerify['Leader'].Address):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Address):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Address):$($ravenIpsAndPortsToVerify['Follower2'].Port)"
     "$($ClusterConnectionStringName)=$($clusterConnectionString)" >> $Env:GITHUB_ENV
 }
 
@@ -161,8 +161,8 @@ $connectionErrors = [hashtable]::Synchronized(@{})
     $hashTable = $using:ravenIpsAndPortsToVerify
     $nodeName = $_
     $nodeInfo = $hashTable[$nodeName]
-    $nodeUrl = "http://$($nodeInfo.Ip):$($nodeInfo.Port)"
-    Write-Output "::add-mask::$($nodeInfo.Ip)"
+    $nodeUrl = "http://$($nodeInfo.Address):$($nodeInfo.Port)"
+    Write-Output "::add-mask::$($nodeInfo.Address)"
     Write-Output "Verifying HTTP connection to $nodeName at $nodeUrl"
     
     $connected = $false
@@ -264,14 +264,14 @@ if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         exit -1
     }
 
-    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Address):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
     Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower1 to cluster"
         exit -1
     }
 
-    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Address):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
     Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower 2 to cluster"
