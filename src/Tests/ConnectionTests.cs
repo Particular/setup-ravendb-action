@@ -8,7 +8,7 @@ namespace Tests;
 public class ConnectionTests
 {
     [CancelAfter(5000)]
-    [TestCaseSource(nameof(ValidUrls))]
+    [Test, TestCaseSource(nameof(ValidUrls))]
     public void Should_establish_connection(string? connectionUrl, string environmentVariable)
     {
         if (connectionUrl is null)
@@ -17,6 +17,7 @@ public class ConnectionTests
             Assert.Ignore($"No '{environmentVariable}' environment variable set");
         }
 
+        var cancellationToken = TestContext.CurrentContext.CancellationToken;
         var databaseName = $"{environmentVariable}ConnectionTests";
         var documentStore = new Raven.Client.Documents.DocumentStore
         {
@@ -26,7 +27,7 @@ public class ConnectionTests
 
         Assert.DoesNotThrowAsync(async () =>
         {
-            await documentStore.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(databaseName)), TestContext.CurrentContext.CancellationToken);
+            await documentStore.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(databaseName)), cancellationToken);
         });
     }
 
