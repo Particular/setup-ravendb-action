@@ -199,10 +199,6 @@ if ($connectionErrors.Count -gt 0) {
 
 Write-Output "::endgroup::"
 
-# This is not entirely nice because the activitation for linux happens inside the compose infrastructure while for windows
-# we have to do it here. The cluster checks during the setup phase whether it can reach the nodes and that was easier to do within
-# the compose setup container. Maybe one day we will find a way to clean this up a bit.
-
 function ValidateRavenLicense {
     param (
         $name,
