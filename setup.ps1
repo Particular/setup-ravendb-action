@@ -40,21 +40,13 @@ if ($runnerOs -eq "Linux") {
 
     if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
         docker compose -f singlenode-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Single", @{ Ip = "127.0.0.1"; Port = 8080 })
+        $ravenIpsAndPortsToVerify.Add("Single", @{ Address = "host.docker.internal"; Port = 8080 })
     }
     if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
         docker compose -f clusternodes-compose.yml up --detach
-        $ravenIpsAndPortsToVerify.Add("Leader", @{ Ip = "127.0.0.1"; Port = 8081 })
-        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Ip = "127.0.0.1"; Port = 8082 })
-        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Ip = "127.0.0.1"; Port = 8083 })
-    }
-
-    # write the connection string to the specified environment variable depending on the mode
-    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        "$($SingleConnectionStringName)=http://localhost:8080" >> $Env:GITHUB_ENV
-    }
-    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-        "$($ClusterConnectionStringName)=http://localhost:8081,http://localhost:8082,http://localhost:8083" >> $Env:GITHUB_ENV
+        $ravenIpsAndPortsToVerify.Add("Leader", @{ Address = "host.docker.internal"; Port = 8081 })
+        $ravenIpsAndPortsToVerify.Add("Follower1", @{ Address = "host.docker.internal"; Port = 8082 })
+        $ravenIpsAndPortsToVerify.Add("Follower2", @{ Address = "host.docker.internal"; Port = 8083 })
     }
 }
 elseif ($runnerOs -eq "Windows") {
@@ -142,15 +134,7 @@ elseif ($runnerOs -eq "Windows") {
         $registryPass = $using:RegistryPass
         $detail = NewRavenDBNode $resourceGroup $region $prefix $instanceId $runnerOs $ravenDBVersion $Env:GITHUB_SHA $tag $registryLoginServer $registryUser $registryPass
         $hashTable = $using:ravenIpsAndPortsToVerify
-        $hashTable[$_].Ip = $detail
-    }
-
-    # write the connection string to the specified environment variable depending on the mode
-    if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-        "$($SingleConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)" >> $Env:GITHUB_ENV
-    }
-    if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-        "$($ClusterConnectionStringName)=http://$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)" >> $Env:GITHUB_ENV
+        $hashTable[$_].Address = $detail
     }
 }
 else {
@@ -158,35 +142,52 @@ else {
     exit 1
 }
 
-Write-Output "::group::Testing connection"
+# write the connection string to the specified environment variable depending on the mode
+if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
+    $singleConnectionString = "http://$($ravenIpsAndPortsToVerify['Single'].Address):$($ravenIpsAndPortsToVerify['Single'].Port)"
+    "$($SingleConnectionStringName)=$($singleConnectionString)" >> $Env:GITHUB_ENV
+}
+if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
+    $clusterConnectionString = "http://$($ravenIpsAndPortsToVerify['Leader'].Address):$($ravenIpsAndPortsToVerify['Leader'].Port),http://$($ravenIpsAndPortsToVerify['Follower1'].Address):$($ravenIpsAndPortsToVerify['Follower1'].Port),http://$($ravenIpsAndPortsToVerify['Follower2'].Address):$($ravenIpsAndPortsToVerify['Follower2'].Port)"
+    "$($ClusterConnectionStringName)=$($clusterConnectionString)" >> $Env:GITHUB_ENV
+}
+
+Write-Output "::group::Testing HTTP connectivity"
 
 $connectionErrors = [hashtable]::Synchronized(@{})
 @($ravenIpsAndPortsToVerify.keys) | ForEach-Object -Parallel {
     $startDate = Get-Date
     $errorTable = $using:connectionErrors
     $hashTable = $using:ravenIpsAndPortsToVerify
-    $tcpClient = New-Object Net.Sockets.TcpClient
     $nodeName = $_
     $nodeInfo = $hashTable[$nodeName]
-    Write-Output "::add-mask::$($nodeInfo.Ip)"
-    Write-Output "Verifying connection $nodeName"
+    $nodeUrl = "http://$($nodeInfo.Address):$($nodeInfo.Port)"
+    Write-Output "::add-mask::$($nodeInfo.Address)"
+    Write-Output "Verifying HTTP connection to $nodeName at $nodeUrl"
+    
+    $connected = $false
     do {
         try {
-            Write-Output "Trying to connect to $nodeName on port $($nodeInfo.Port)"
-            $tcpClient.Connect($nodeInfo.Ip, $nodeInfo.Port)
-            Write-Output "Connection to $nodeName successful"
+            Write-Output "Trying HTTP connection to $nodeName at $nodeUrl"
+            
+            $response = Invoke-WebRequest "$nodeUrl/admin/stats" -Method GET -UseBasicParsing -TimeoutSec 30
+            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 300) {
+                $connected = $true
+                Write-Output "HTTP connection to $nodeName successful - Status: $($response.StatusCode)"
+            }
         }
         catch {
             if ($startDate.AddMinutes(5) -lt (Get-Date)) {
-                $errorTable[$nodeName] = "Unable to connect to $nodeName"
+                $errorTable[$nodeName] = "Unable to establish HTTP connection to $nodeName at $nodeUrl"
                 break
             }
+            Write-Output "HTTP connection attempt failed, retrying in 10 seconds..."
             Start-Sleep -Seconds 10
         }
-    } While ($tcpClient.Connected -ne "True")
-    $tcpClient.Close()
+    } While (-not $connected)
+    
     if (-not $errorTable.ContainsKey($nodeName)) {
-        Write-Output "Connection to $nodeName verified"
+        Write-Output "HTTP connection to $nodeName verified"
     }
 }
 
@@ -198,9 +199,7 @@ if ($connectionErrors.Count -gt 0) {
 
 Write-Output "::endgroup::"
 
-# This is not entirely nice because the activitation for linux happens inside the compose infrastructure while for windows
-# we have to do it here. The cluster checks during the setup phase whether it can reach the nodes and that was easier to do within
-# the compose setup container. Maybe one day we will find a way to clean this up a bit.
+Write-Output "::group::Licensing and setting up node(s)"
 
 function ValidateRavenLicense {
     param (
@@ -226,48 +225,55 @@ function ValidateRavenLicense {
     }
 }
 
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on Single Node"
 
-    Invoke-WebRequest "http://$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    $singleNodeUrl = $singleConnectionString
+
+    Invoke-WebRequest "$($singleNodeUrl)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on single-node server"
         exit -1
     }
 
-    ValidateRavenLicense "Single-Node Server" "$($ravenIpsAndPortsToVerify['Single'].Ip):$($ravenIpsAndPortsToVerify['Single'].Port)"
+    ValidateRavenLicense "Single-Node Server" ([Uri]$singleNodeUrl).Authority
 }
-if ($runnerOs -eq "Windows" -and (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both"))) {
+if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
     Write-Output "Activating License on leader in the cluster"
 
-    $leader = "$($ravenIpsAndPortsToVerify['Leader'].Ip):$($ravenIpsAndPortsToVerify['Leader'].Port)"
+    $clusterUrls = $clusterConnectionString.Split(",")
+
+    # First URL is always the leader
+    $leaderUrl = $clusterUrls[0]
+
     # Once you set the license on a node, it assumes the node to be a cluster, so only set the license on the leader
-    Invoke-WebRequest "http://$($leader)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/license/activate" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'charset' = 'UTF-8' } -Body "$($FormattedRavenDBLicense)" -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to activate RavenDB license on cluster leader"
         exit -1
     }
 
-    ValidateRavenLicense "Cluster Leader" $leader
+    ValidateRavenLicense "Cluster Leader" ([Uri]$leaderUrl).Authority
 
     Write-Output "Establish the cluster relationship"
-    Invoke-WebRequest "http://$($leader)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    Invoke-WebRequest "$($leaderUrl)/admin/license/set-limit?nodeTag=A&newAssignedCores=1" -Method POST -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to set license limitations on cluster leader"
         exit -1
     }
 
-    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Ip):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower1'].Address):$($ravenIpsAndPortsToVerify['Follower1'].Port)") 
+    Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=B&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower1 to cluster"
         exit -1
     }
 
-    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Ip):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
-    Invoke-WebRequest "http://$($leader)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
+    $encodedURL = [System.Web.HttpUtility]::UrlEncode("http://$($ravenIpsAndPortsToVerify['Follower2'].Address):$($ravenIpsAndPortsToVerify['Follower2'].Port)")
+    Invoke-WebRequest "$($leaderUrl)/admin/cluster/node?url=$($encodedURL)&tag=C&watcher=true&assignedCores=1" -Method PUT -Headers @{ 'Content-Type' = 'application/json'; 'Context-Length' = '0'; 'charset' = 'UTF-8' } -MaximumRetryCount 5 -RetryIntervalSec 10 -ConnectionTimeoutSeconds 30
     if (!$?) {
         Write-Error "Unable to join Follower 2 to cluster"
         exit -1
     }
 }
+Write-Output "::endgroup::"

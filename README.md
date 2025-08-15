@@ -92,7 +92,7 @@ To test the setup action set the required environment variables and execute `set
 $Env:RUNNER_OS=Windows
 $Env:RESOURCE_GROUP_OVERRIDE=yourResourceGroup
 $Env:REGION_OVERRIDE=yourResourceGroup
-.\setup.ps1 -ScriptDirectory . -ContainerName psw-ravendb-1 -SingleConnectionStringName RavenDBConnectionString -ClusterConnectionStringName RavenDBConnectionString -RavenDBLicense 'SingleLineJSON' -RavenDBVersion "5.3" -RavenDBMode "Single" -Tag setup-ravendb-action
+.\setup.ps1 -ScriptDirectory . -ContainerName psw-ravendb-1 -SingleConnectionStringName RavenDBConnectionString -ClusterConnectionStringName RavenDBConnectionString -RavenDBLicense 'SingleLineJSON' -RavenDBVersion "6.2" -RavenDBMode "Single" -Tag setup-ravendb-action
 ```
 
 To test the cleanup action set the required environment variables and execute `cleanup.ps1` with the desired parameters.
