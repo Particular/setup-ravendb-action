@@ -15,7 +15,7 @@ inputs:
   ravendb-version:
     description: The RavenDB container tag name
     required: false
-    default: "6.2-ubuntu-latest"
+    default: "7.1-ubuntu-latest"
   ravendb-mode:
     description: The RavenDB server mode (Single, Cluster, Both)
     required: false
