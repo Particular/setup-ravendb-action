@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
       - name: Setup WSL
-        uses: Particular/setup-wsl-action@7e2680cc8f0ce45b98e615efa465e0aa7b58fd47
+        uses: Particular/setup-wsl-action@v1.1.0
       - name: Run
         uses: ./
         with:
