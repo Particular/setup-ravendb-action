@@ -7,33 +7,29 @@ param (
 Set-Location $ScriptDirectory
 
 $runnerOs = $Env:RUNNER_OS ?? "Linux"
-$resourceGroup = $Env:RESOURCE_GROUP_OVERRIDE ?? "GitHubActions-RG"
+
+if (-not $Env:WSL_TOOLS_MODULE_PATH) {
+    throw "This action requires Particular/setup-wsl-action to run first — it provisions WSL/Docker and exports the WslTools module at WSL_TOOLS_MODULE_PATH."
+}
+Import-Module $Env:WSL_TOOLS_MODULE_PATH -Force
 
 if ($runnerOs -eq "Linux") {
-    Write-Output "Killing Docker container $ContainerName"
+    Write-Output "Removing Docker container $ContainerName"
     if($RavenDBMode -eq "Single") {
-        docker compose -f singlenode-compose.yml kill
+        docker compose -f singlenode-compose.yml down
     }
     if($RavenDBMode -eq "Cluster") {
-        docker compose -f clusternodes-compose.yml kill
+        docker compose -f clusternodes-compose.yml down
     }
-
-    Write-Output "Removing Docker container $ContainerName"
-    docker rm $ContainerName
 }
 elseif ($runnerOs -eq "Windows") {
-    Write-Output "Deleting Azure container(s) $ContainerName-*"
-    $containersToDelete = az container list --resource-group $resourceGroup --query "[?contains(name, '$($ContainerName)')].name" | ConvertFrom-Json
-
-    foreach ($container in $containersToDelete) {
-        try {
-            Write-Output "Deleting container $container..."
-            $ignore = az container delete --name $container --resource-group $resourceGroup --yes | ConvertFrom-Json
-        }
-        catch {
-            Write-Output "Error cleaning up container"
-            Write-Output $_
-        }
+    Write-Output "Removing WSL Docker container $ContainerName"
+    $wslPath = ConvertTo-WslPath $ScriptDirectory
+    if($RavenDBMode -eq "Single") {
+        Invoke-Wsl -Command "cd $wslPath && CONTAINER_NAME=$ContainerName docker compose -f singlenode-compose.yml down"
+    }
+    if($RavenDBMode -eq "Cluster") {
+        Invoke-Wsl -Command "cd $wslPath && CONTAINER_NAME=$ContainerName docker compose -f clusternodes-compose.yml down"
     }
 }
 else {

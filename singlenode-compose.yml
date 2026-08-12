@@ -12,9 +12,9 @@ services:
       - RAVEN_Setup_Mode=None
       - RAVEN_License_Eula_Accepted=true
       - "RAVEN_ServerUrl=http://172.28.1.1:8080"
-      - "RAVEN_PublicServerUrl=http://host.docker.internal:8080"
+      - "RAVEN_PublicServerUrl=http://${PUBLIC_HOST:-host.docker.internal}:8080"
       - "RAVEN_ServerUrl_Tcp=tcp://172.28.1.1:38888"
-      - "RAVEN_PublicServerUrl_Tcp=tcp://host.docker.internal:38888"
+      - "RAVEN_PublicServerUrl_Tcp=tcp://${PUBLIC_HOST:-host.docker.internal}:38888"
     networks:
       singlenode_network:
         ipv4_address: 172.28.1.1
