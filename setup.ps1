@@ -28,6 +28,9 @@ if (-not $Env:WSL_TOOLS_MODULE_PATH) {
     throw "This action requires Particular/setup-wsl-action to run first — it provisions WSL/Docker and exports the WslTools module at WSL_TOOLS_MODULE_PATH."
 }
 Import-Module $Env:WSL_TOOLS_MODULE_PATH -Force
+if (-not (Get-Command Invoke-DockerCompose -ErrorAction SilentlyContinue)) {
+    throw "This action needs a newer Particular/setup-wsl-action: its WslTools module does not export Invoke-DockerCompose."
+}
 
 if ($runnerOs -eq "Linux") {
     Write-Output "Running RavenDB in container $($ContainerName) using Docker"
@@ -36,10 +39,6 @@ if ($runnerOs -eq "Linux") {
     bash -c "echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts"
 
     $address = "host.docker.internal"
-    # docker compose interpolates ${CONTAINER_NAME} / ${RAVENDB_VERSION} from the environment
-    $Env:CONTAINER_NAME = $ContainerName
-    $Env:RAVENDB_VERSION = $RavenDBVersion
-    $wslPath = $null
 }
 elseif ($runnerOs -eq "Windows") {
     Write-Output "Running RavenDB in container $($ContainerName) using WSL"
@@ -62,36 +61,32 @@ elseif ($runnerOs -eq "Windows") {
     else {
         Write-Output "Using anonymous credentials"
     }
-
-    $wslPath = ConvertTo-WslPath $ScriptDirectory
 }
 else {
     Write-Output "$runnerOs not supported"
     exit 1
 }
 
-function Invoke-DockerCompose {
-    param([string]$ComposeFile, [string]$Action)
-    if ($runnerOs -eq "Linux") {
-        # PowerShell does not word-split a string variable when invoking native executables,
-        # so "up --detach" would reach docker as a single argv token and be rejected.
-        $actionArgs = $Action -split '\s+'
-        docker compose -f $ComposeFile @actionArgs
-    }
-    else {
+function Start-RavenDB {
+    param([string]$ComposeFile)
+
+    $environment = @{ CONTAINER_NAME = $ContainerName; RAVENDB_VERSION = $RavenDBVersion }
+    if ($runnerOs -eq "Windows") {
         # PUBLIC_HOST is the address RavenDB advertises (RAVEN_PublicServerUrl). On Windows the
         # test process runs on the host where host.docker.internal does not resolve, so advertise
         # the WSL IP instead. The compose files default PUBLIC_HOST to host.docker.internal.
-        Invoke-Wsl -CheckExitCode -Command "cd $wslPath && CONTAINER_NAME=$ContainerName RAVENDB_VERSION=$RavenDBVersion PUBLIC_HOST=$address docker compose -f $ComposeFile $Action"
+        $environment.PUBLIC_HOST = $address
     }
+
+    Invoke-DockerCompose -CheckExitCode -ComposeFilePath (Join-Path $ScriptDirectory $ComposeFile) -Arguments "up", "--detach" -Environment $environment
 }
 
 if (($RavenDBMode -eq "Single") -or ($RavenDBMode -eq "Both")) {
-    Invoke-DockerCompose "singlenode-compose.yml" "up --detach"
+    Start-RavenDB "singlenode-compose.yml"
     $ravenIpsAndPortsToVerify.Add("Single", @{ Address = $address; Port = 8080 })
 }
 if (($RavenDBMode -eq "Cluster") -or ($RavenDBMode -eq "Both")) {
-    Invoke-DockerCompose "clusternodes-compose.yml" "up --detach"
+    Start-RavenDB "clusternodes-compose.yml"
     $ravenIpsAndPortsToVerify.Add("Leader", @{ Address = $address; Port = 8081 })
     $ravenIpsAndPortsToVerify.Add("Follower1", @{ Address = $address; Port = 8082 })
     $ravenIpsAndPortsToVerify.Add("Follower2", @{ Address = $address; Port = 8083 })
