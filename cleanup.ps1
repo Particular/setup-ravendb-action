@@ -25,9 +25,9 @@ function Stop-RavenDB {
 }
 
 Write-Output "Removing Docker container $ContainerName"
-if ($RavenDBMode -eq "Single") {
+if ($RavenDBMode -in "Single", "Both") {
     Stop-RavenDB "singlenode-compose.yml"
 }
-if ($RavenDBMode -eq "Cluster") {
+if ($RavenDBMode -in "Cluster", "Both") {
     Stop-RavenDB "clusternodes-compose.yml"
 }
